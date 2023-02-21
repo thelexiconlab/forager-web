@@ -1,0 +1,22 @@
+# Permalinks
+permalink:        pretty
+relative_permalinks: true
+
+# Setup
+title:            forager · lexicon lab
+tagline:          'A Jekyll theme'
+description:      'Test description'
+# url:              http://hyde.getpoole.com
+baseurl:          /
+
+author:
+  name:           'Nancy Xing'
+  # url:            https://twitter.com/mdo
+
+paginate:         5
+
+# Custom vars
+# version:          2.1.0
+
+# github:
+#   repo:           https://github.com/poole/hyde
