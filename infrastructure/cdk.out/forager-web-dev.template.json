@@ -55,7 +55,7 @@
    "Properties": {
     "SourceConfiguration": {
      "AuthenticationConfiguration": {
-      "ConnectionArn": "arn:aws:apprunner:us-east-1:195045780388:connection/app-runner-houser/57b416691b0b4ce9b75ed4596e1db5ae"
+      "ConnectionArn": "arn:aws:apprunner:us-east-1:640202414923:connection/forager-apprunner-houser/de731298cb4d458f97faff3b049db3a6"
      },
      "CodeRepository": {
       "CodeConfiguration": {

@@ -7,4 +7,4 @@ pipenv install
 
 # Use gunicorn to run the web service
 cd forager
-pipenv run gunicorn -w 4 --bind 0.0.0.0:8080 --access-logfile=- --reload application:application
+pipenv run gunicorn -w 4 --bind 0.0.0.0:8080 --access-logfile=- --reload forager.application:application

@@ -20,7 +20,7 @@ from aws_cdk import (
 from constructs import Construct
 
 BUILD_COMMAND='pip install pipenv && pipenv install'
-START_COMMAND='(cd forager; pipenv run gunicorn -w 4 --bind 0.0.0.0:8080 --access-logfile=- application:application)'
+START_COMMAND='pipenv run gunicorn -w 4 --bind 0.0.0.0:8080 --access-logfile=- forager.application:application'
 
 class SimpleDBStack(Stack):
     def __init__(self, scope:Construct, id:str,
