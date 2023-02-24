@@ -1,7 +1,7 @@
 {
   "version": "30.0.0",
   "files": {
-    "ec4dc021eb1a9bd9591e6ec530a503a85ee4b94fd8c6199b276c07e63444c746": {
+    "40ccae86d4b4c2d904f9f2eafb6be8f70b112c8d9e0e3321a145e1aceb964cd2": {
       "source": {
         "path": "forager-web-dev.template.json",
         "packaging": "file"
@@ -9,7 +9,7 @@
       "destinations": {
         "640202414923-us-east-1": {
           "bucketName": "cdk-hnb659fds-assets-640202414923-us-east-1",
-          "objectKey": "ec4dc021eb1a9bd9591e6ec530a503a85ee4b94fd8c6199b276c07e63444c746.json",
+          "objectKey": "40ccae86d4b4c2d904f9f2eafb6be8f70b112c8d9e0e3321a145e1aceb964cd2.json",
           "region": "us-east-1",
           "assumeRoleArn": "arn:${AWS::Partition}:iam::640202414923:role/cdk-hnb659fds-file-publishing-role-640202414923-us-east-1"
         }

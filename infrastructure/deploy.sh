@@ -5,7 +5,7 @@
 pipenv run cdk --profile faculty deploy
 
 # Production deploy
-# pipenv run cdk --profile student --context deployType=prod deploy
+# pipenv run cdk --profile faculty --context deployType=prod deploy
 
 echo "Infrastructure deployed!"
 echo "To delete:"

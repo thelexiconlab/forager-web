@@ -62,7 +62,7 @@
        "CodeConfigurationValues": {
         "BuildCommand": "pip install pipenv && pipenv install",
         "Runtime": "PYTHON_3",
-        "StartCommand": "(cd forager; pipenv run gunicorn -w 4 --bind 0.0.0.0:8080 --access-logfile=- application:application)"
+        "StartCommand": "pipenv run gunicorn -w 4 --bind 0.0.0.0:8080 --access-logfile=- application:application"
        },
        "ConfigurationSource": "API"
       },
