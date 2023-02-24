@@ -1,0 +1,44 @@
+<% extends 'base.html' %>
+
+<% block header %>
+  <h1>About</h1>
+<% endblock %>
+
+<% block content %>
+
+<div id="about">
+    <p>
+        Analyzing data from the verbal fluency task (e.g. “name all the animals you can in a minute”) is of
+        interest to both memory researchers and clinicians due to its implications for cognitive search and
+        retrieval. Recent work has proposed several computational models to examine nuanced differences in
+        fluency task behavior, which can provide insights into the mechanisms underlying memory search. </p>
+        
+        <p>A prominent account of memory search within the fluency task is the optimal foraging model, proposed
+        by Hills, Jones, and Todd (2012), where mental search is modeled after how animals forage for food
+        by switching from cluster to cluster in resource-rich environments. Despite the broad potential
+        utility of these models to scientists and clinicians, there is currently no open source program to
+        apply and compare existing foraging models or clustering algorithms without extensive, often
+        redundant programming. </p>
+        
+        <p>To remove this barrier to studying fluency task behavior, we created a Python
+        package and web interface called <i>forager</i>. <i>forager</i> provides multiple automated methods to 
+        designate clusters and switches within a fluency list and introduces a novel set of models that can 
+        examine the influence of multiple lexical sources (semantic, phonological, and frequency) on memory search. 
+        The package provides automated clustering and switching scores at the participant level, implements a range of 
+        computational models for memory search, and also enables researchers to evaluate relative model performance 
+        at the dataset and group level. Our package and web interface cater to users with various levels of 
+        programming experience. 
+    </p>
+    <p>
+        The package is available for use directly via the Python codebase or via this web app.
+        To use the package online, head over to the "Run Online" tab via the sidebar.
+    </p>
+</div>
+
+<div id="authors">
+    <h1>Authors</h1>
+    <p>The Python package was developed by Abhilasha Kumar, Molly Apsel, Larry Zhang, and Michael Jones.</p>
+    <p>The forager web application was developed by Nancy Xing.</p>
+</div>
+
+<% endblock %>

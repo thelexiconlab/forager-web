@@ -1,0 +1,88 @@
+<% extends 'base.html' %>
+
+<% block header %>
+  <h1>Docs</h1>
+<% endblock %>
+
+<% block content %>
+
+<div id="section">
+<p>This page contains more information about the key components of <i>forager:</i> <a href="#data">data</a>, the <a href="#oov">default policy for handling out-of-vocabulary words</a>, <a href="#switch">switch methods</a>, <a href="#models">models</a>, and <a href=#out>outputs</a>. </p>
+</div>
+<h2 id="data"> Data </h2>
+<p>To use forager on one’s own data, the user needs to upload a <b>single text file of fluency lists</b>  with two columns: 
+one for the participant identifier and one for the item they produced. For example, if participant 1 had 
+30 response items, there would be 30 rows with “1” in the first column, one for each item in their fluency list.
+The rows should be separated by a newline, and the columns should be separated by the same delimiter throughout 
+(such as a tab, space, comma). Most spreadsheet tools (e.g., Excel) can save files as a CSV, which can then be 
+converted to a text file. </p>
+
+<p><b>Please note:</b> The current version of forager already contains the necessary lexical data to process English-language VFT data 
+for the “animals” category and the web interface works for this category. However, those who wish to analyze data from a different category should use the Python package directly upload their own lexicon of 
+acceptable words and corresponding semantic embeddings for that category and derive the necessary frequency and similarity 
+data using the functions provided in the package. In the future, we hope to expand the functionality of 
+the package by providing predefined lexical data for multiple categories. </p>
+
+<h2 id="oov"> Handling out-of-vocabulary (OOV) words </h2>
+
+<p>All search-related functions in forager rely on the lexical measures mentioned above. 
+Therefore, the items in the fluency lists must be in the stored lexicon (i.e., in the files containing the embeddings, 
+frequencies, and similarity matrices). An out-of-vocabulary (OOV) item can be replaced by a close match in the lexicon. 
+It can also be removed along with all subsequent items in that participant’s list. We do not allow the removal of only the 
+OOV item itself because the switch methods and models critically depend on the relationships between consecutive items to 
+evaluate semantic foraging behavior. </p>
+
+<p>After providing the file containing the fluency lists, the web interface of forager implements a default policy for OOV words.
+The default policy computes the Levenshtein edit distance between the OOV item and its closest match in the lexicon. 
+If the edit distance is two or less, the OOV item is replaced by the closest match (e.g., horses would be replaced by horse). 
+If the edit distance between the OOV item and the closest match found in the lexicon is more than two, the list is truncated after 
+the OOV item. This default policy allows correcting for minor variants, plurals, and spelling errors within the fluency lists, 
+but also mindfully truncates lists at junctures where no suitable replacement can be found. </p>
+
+<p>If a user wishes to review the OOV 
+items one by one instead of adopting the default policy, they are encouraged to use the Python package locally, where they will be 
+shown the OOV item and its top three closest matches in the lexicon. 
+The user can then choose to replace the item with one of the matches or truncate the list. This process is repeated for all OOV items. 
+The final result of the data preparation process is a data frame of fluency lists that contains only acceptable words, 
+which are then processed further to compute clusters/switches and derive model estimates.</p>
+
+<h2 id="switch">Switch Methods</h2>
+
+<p>forager provides four different methods for determining clusters and switches in a fluency list: 
+  <ol>
+    <li><b>Troyer norms</b>, based on the hand-coded norms of animal subcategories created by Troyer et al. (1997; e.g., pets, aquatic animals, etc.) and subsequently extended by Lundin et al. (2022), </li> 
+    <li><b>Similarity-drop</b>, based on the heuristic used by Hills et al. (2012), where a switch is predicted if there is a drop in semantic similarity between consecutive items followed by an immediate rise in semantic similarity</li>
+    <li><b>Delta similarity</b>, based on Lundin et al. (2022), where switches and clusters depend on whether a rise or drop in semantic similarity exceeds specific thresholds, and </li>
+    <li><b>Multimodal similarity drop</b>, where the similarity between consecutive items is a weighted sum of the semantic and phonological similarity, and switches correspond to drops in semantic-phonological similarity.</li>
+
+  </ol>
+
+  <h2 id="models">Models</h2>
+
+ <p>forager comes with several foraging models that can be fit to VFT data (static, dynamic, etc.). The models differ in their 
+  use of three lexical sources (semantic similarity, phonological similarity, and frequency) during cluster and switch transitions.
+   Details of computational models are provided in Hills et al. (2012) and Kumar, Lundin, & Jones (2022), as well as in the package 
+   documentation, although we provide brief descriptions below. Users can run a single model, a subset of models, or all models for 
+   comparison. Each model will calculate the overall negative log-likelihood (NLL) of the data, as well as participant- and 
+   item-level NLLs. </p> 
+
+   <ol>
+  <li><b>Static foraging model. </b>The static model (Hills et al., 2012) uses semantic similarity and word frequency to calculate the probability of retrieving an item without consideration of transitions between clusters. </li>
+  <li><b>Dynamic foraging model.</b> The dynamic model (Hills et al., 2012) uses different cues to determine an item’s likelihood based on whether the item belongs to a cluster or signifies a switch event. For items within a cluster, the model is identical to the static model and uses semantic similarity and word frequency to make local transitions. When items are designated as switches, the likelihood is computed based on frequency alone. </li>
+  <li><b>Phonology-based models. </b>In addition to the classic foraging models described above, we also introduce and release a range of experimental models that explore the influence of phonology in local (within-cluster) and global (between-cluster) transitions. Specifically, we adapted the static and dynamic models from Hills et al. (2012) to incorporate phonological similarity cues, based on recent work by Kumar, Lundin, and Jones (2022). The static phonology model is identical to the static model above, except that the product of the frequencies and semantic similarities is also multiplied by phonological similarities. Like the frequency and semantic similarity cues, the phonological similarity is also weighted by a saliency parameter. The dynamic phonology model has an additional argument specifying the type of phonological cue used from the following options: “local,” “global,” or “switch.” The “local” dynamic model incorporates phonological similarity as an additional cue for within-cluster transitions. The “global” dynamic model incorporates phonological similarity in both switch and cluster transitions. Finally, the “switch” dynamic model computes the likelihood of an item based on phonological similarity and frequency for switch transitions and based on semantic similarity and frequency for cluster transitions. </li>
+   </ol>
+
+   <h2 id="out">Outputs</h2>
+   <p>
+
+    Three output files are generated when forager is run. These contain:
+    <ol>
+ <li>Item-wise lexical metrics (semantic similarity, phonological similarity, and word frequency) as well as the item-wise NLLs for each chosen model and switch method (ends with _individualitemfits.csv)</li>
+ <li>The switch designations for each item for each selected switch method (ends with _switchresults.csv), and </li>
+ <li>The model results with the optimal parameter values and NLL for each model and switch method run (ends with _modelresults.csv). </li>
+
+    </ol>
+
+    Possible analyses with forager include finding the best-fitting model for a set of fluency lists, evaluating the performance of a specific model, obtaining metrics of semantic and/or phonological similarity as well as different cluster/switch designations, and comparing the model performance for different groups. 
+   </p>
+<% endblock %>

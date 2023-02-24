@@ -1,0 +1,263 @@
+<% extends 'base.html' %>
+
+<% block header %>
+  <h1>forager: A web-interface for modeling mental search</h1>
+<% endblock %>
+
+<% block content %>
+
+<p>Welcome! <i>forager</i> is a Python-based web interface to analyze verbal fluency data. You can use <i>forager</i> to obtain cluster-switch designations based on a variety of methods, run computational models of search (based on optimal foraging), and also obtain estimates of semantic similarity, phonological similarity, and frequency for items produced by participants.</p>
+
+<p>To know more about <i>forager</i>, explore the tabs on the sidebar.</p>
+<p>On this page, you can upload verbal fluency data and run the forager model for the <i>animals</i> category.  </p>
+
+<b>Please note:</b>
+<ul>
+    <li>We do not save any uploaded data.</li>
+    <li>Currently, the web interface only allows processing of VFT data for animals. If you wish to analyze other domains, please download and run the package locally by uploading your own norms.</li>
+    <li>This web app uses the default policy for out-of-vocabulary (OOV) words (see about page). You can make individual
+        replacements and truncations by downloading and running the forager package locally.</li>
+</ul>
+
+
+<!--ANGULARJS PORTION-->
+<div layout:fragment="content">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.js"></script>
+
+    <script>
+        var app = angular.module('myApp', []);
+
+        // enable URL for file download
+        app.config(['$compileProvider',
+            function ($compileProvider) {
+                $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|tel|file|blob):/);
+            }]);
+
+        app.directive('fileModel', ['$parse', function ($parse) {
+            return {
+                restrict: 'A',
+                link: function (scope, element, attrs) {
+                    var model = $parse(attrs.fileModel);
+                    var modelSetter = model.assign;
+                    element.bind('change', function () {
+                        scope.$apply(function () {
+                            modelSetter(scope, element[0].files[0]);
+                        });
+                    });
+                }
+            };
+        }]);
+
+        app.controller('populateCtrl', function ($scope, $http, $q) {
+            // Initialize values
+            $scope.selectResults = ['Switch', 'Model']
+            $scope.selectedModel = "dynamic";
+            $scope.selectedSwitch = "troyer";
+            $scope.zipFolderName = "";
+            $scope.evaluationMessage = "";
+            $scope.evalErrorMessage = "";
+            $scope.validEntries = false;
+            $scope.evaluationSuccess = false;
+            $scope.inProgress = false;
+
+            // Evaluate data on button press
+            $scope.evaluateDataButton = function () {
+                if (typeof $scope.userFile === "undefined") {
+                    $scope.evalErrorMessage = "Please select a file.";
+                    $scope.evaluationSuccess = false;
+                }
+                else {
+                    $scope.evalErrorMessage = "";
+                    var response = $scope.retrieveDataEvaluation($scope.userFile);
+                    $scope.evaluationSuccess = true;
+                }
+            }
+
+            // Retrieve results on button press
+            $scope.retrieveResultsButton = function () {
+                var file = $scope.userFile;
+
+                $scope.validateEntries();
+
+                if ($scope.validEntries)  {
+                    $scope.inProgress = true;
+                    console.log($scope.inProgress)
+                    $scope.evalErrorMessage = "";
+
+                    // generate results folder name
+                    var switchName = $scope.getSwitch ? $scope.selectedSwitch : 'none';
+                    $scope.zipFolderName = [file.name.split('.')[0], 'model', $scope.selectedModel, 'switch',
+                    switchName, 'results'].join('_');
+
+                    // make HTTP Request
+                    $scope.retrieveModelResults(file, $scope.selectedModel, $scope.selectedSwitch);
+                }
+            };
+
+            // Ensure form has valid entries before model request
+            $scope.validateEntries = function(){
+                $scope.validEntries = false;
+                if (typeof $scope.userFile === "undefined") {
+                    $scope.resultsErrorMessage = "Please select a file.";
+                } 
+                else if ($scope.getSwitch != true && $scope.getModel != true && $scope.getNll != true) {
+                    $scope.resultsErrorMessage = "Please select at least one output.";
+                } else {
+                    $scope.validEntries = true;
+                }
+            }
+
+            // HTTP request to evaluate data
+            $scope.retrieveDataEvaluation = function (file) {
+                var payload = new FormData();
+                payload.append('filename', file);
+
+                var requestBody = {
+                    url: 'evaluate-data',
+                    method: 'POST',
+                    data: payload,
+                    headers: { 'Content-Type': undefined },
+                    transformRequest: angular.identity,
+                    responseType: String
+                }
+
+                $http(requestBody).then(function (response) {
+                    $scope.evaluationMessage = response.data;
+                    $scope.evaluationSuccess = true;
+                });
+
+            }
+
+            // HTTP request to run forager
+            $scope.retrieveModelResults = function (file, selectedModel, selectedSwitch) {
+                var payload = new FormData();
+                payload.append('filename', file);
+                payload.append('selected-model', selectedModel);
+                payload.append('selected-switch', selectedSwitch);
+
+                var payloadUrl = "/run-model?switch=" + $scope.getSwitch + "&model=" +$scope.getModel; 
+
+                var requestBody = {
+                    url: payloadUrl,
+                    method: 'POST',
+                    data: payload,
+                    headers: { 'Content-Type': undefined },
+                    transformRequest: angular.identity,
+                    responseType: 'arraybuffer'
+                }
+
+                // Generate zip file
+                $http(requestBody).then(function (response) {
+                    var responseFile = new Blob([response.data], { type: 'application/zip' });
+                    $scope.downloadUrl = (window.URL || window.webkitURL).createObjectURL(responseFile);
+
+                    var anchor = document.createElement("a");
+                    anchor.download = $scope.zipFolderName;
+                    anchor.href = $scope.downloadUrl;
+                    $scope.resultsErrorMessage = "";
+                    anchor.click();
+                    $scope.inProgress = false;
+                }).catch(function (data) {
+                    $scope.resultsErrorMessage = "Server could not process results. Check that data is properly formatted.";
+                    $scope.inProgress = false;
+                });
+
+                
+            }
+            
+        });
+
+    </script>
+
+    <!--HTML PORTION-->
+
+
+</div>
+
+<div class="content container">
+
+    <!--HTML FORM-->
+    <div id="run-online" ng-app="myApp" ng-controller="populateCtrl">
+        <div>
+
+            <!--File upload-->
+            <div>
+                <h2> Run forager</h2>
+                <h3>1) Upload data</h3>
+                <p>Upload data as a tab-delimited .txt file, with columns for subject ID and words:</p>
+
+                <p>
+                    <input type="file" file-model="userFile" accept=".txt" id="upload-file" />
+                </p>
+                <p>
+                    <button id="eval-data-button" ng-click="evaluateDataButton()">Check Data</button>
+                    <label for="eval-data-button"> - Check if all words are in forager's vocabulary set.</label>
+                </p>
+            </div>
+
+            <p ng-if="evaluationSuccess">Evaluation results:</p>
+            <p>
+                <i>{{ evalErrorMessage }}</i>
+            <pre>{{ evaluationMessage }}</pre>
+            </p>
+
+            <!--Run model-->
+            <div>
+                <h3>2) Run model</h3>
+
+                <p>Select the model and switch to use on data.</p>
+
+                <!-- Select model and switch -->
+
+                <p>
+                    <select ng-model="selectedSwitch" name="select-switch" id="select-switch">
+                        <option value="troyer">troyer</option>
+                        <option value="simdrop">simdrop</option>
+                        <option value="multimodal">multimodal</option>
+                        <option value="all">all</option>
+                    </select>
+                    <label for="select-switch"> - Select switch.</label>
+                </p>
+
+                <p>
+                    <select ng-model="selectedModel" name="select-model" id="select-model">
+                        <option value="dynamic">dynamic</option>
+                        <option value="pstatic">pstatic</option>
+                        <option value="pdynamic">pdynamic</option>
+                        <option value="all">all</option>
+                    </select>
+                    <label for="select-model"> - Select model. </label>
+                </p>
+
+                <div>
+                    <h3>3) Select results</h3>
+                    <p>Which results would you like to compute?</p>
+                    <input ng-model="getSwitch" type="checkbox" id="getSwitch" name="getSwitch" value="getSwitch">
+                    <label for="getSwitch"> Switch Results </label><br>
+
+                    <input ng-model="getModel" type="checkbox" id="getModel" name="getModel" value="getModel">
+                    <label for="getModel"> Model and NLL results </label><br>
+
+                </div>
+                <p><br>Click 'Run Model' below to generate .csv files of the selected results. Computations including model/nll results may take a longer time.</p>
+
+                
+
+                <p><button id="results-button" ng-click="retrieveResultsButton()">Run Model</button></p>
+                
+                <div style="text-align: center" ng-if = "inProgress">
+                    <p><i>Fetching Results...</i>
+                        <br><progress id="progress"></progress>
+                    </p>
+                    
+                </div>  
+
+                <i>
+                    {{ resultsErrorMessage }}
+                </i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% endblock %>
