@@ -11,7 +11,7 @@
 #
 # 2022-03-13 Stephen Houser <houser@bowdoin.edu>
 from aws_cdk import (
-    Tags, Environment,
+    Tags,
     aws_ec2 as ec2,
     aws_apprunner_alpha as apprunner,
     App, Stack

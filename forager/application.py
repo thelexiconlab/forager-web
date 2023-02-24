@@ -6,7 +6,7 @@ import os, sys
 from flask import Flask, render_template, request, send_file, abort
 from io import BytesIO
 from zipfile import ZipFile
-from run_foraging_web import *
+#from run_foraging_web import *
 
 
 application = Flask(__name__)
