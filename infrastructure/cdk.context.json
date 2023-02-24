@@ -1,0 +1,45 @@
+{
+  "vpc-provider:account=640202414923:filter.tag:Name=faculty-projects-vpc:region=us-east-1:returnAsymmetricSubnets=true": {
+    "vpcId": "vpc-01b8470d4eb93b108",
+    "vpcCidrBlock": "10.0.0.0/16",
+    "availabilityZones": [],
+    "subnetGroups": [
+      {
+        "name": "Public",
+        "type": "Public",
+        "subnets": [
+          {
+            "subnetId": "subnet-08b68eaca2b8fecff",
+            "cidr": "10.0.0.0/20",
+            "availabilityZone": "us-east-1a",
+            "routeTableId": "rtb-083dacaa01e320d5f"
+          },
+          {
+            "subnetId": "subnet-0b282e96c2649c211",
+            "cidr": "10.0.16.0/20",
+            "availabilityZone": "us-east-1b",
+            "routeTableId": "rtb-083dacaa01e320d5f"
+          }
+        ]
+      },
+      {
+        "name": "Isolated",
+        "type": "Isolated",
+        "subnets": [
+          {
+            "subnetId": "subnet-05f8b796b1871fe08",
+            "cidr": "10.0.128.0/20",
+            "availabilityZone": "us-east-1a",
+            "routeTableId": "rtb-0355e5383ab6075f2"
+          },
+          {
+            "subnetId": "subnet-001703b1b8eb0f711",
+            "cidr": "10.0.144.0/20",
+            "availabilityZone": "us-east-1b",
+            "routeTableId": "rtb-0126fc029755685a4"
+          }
+        ]
+      }
+    ]
+  }
+}

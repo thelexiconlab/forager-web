@@ -1,0 +1,96 @@
+{
+  "version": "30.0.0",
+  "artifacts": {
+    "forager-web-dev.assets": {
+      "type": "cdk:asset-manifest",
+      "properties": {
+        "file": "forager-web-dev.assets.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+      }
+    },
+    "forager-web-dev": {
+      "type": "aws:cloudformation:stack",
+      "environment": "aws://640202414923/us-east-1",
+      "properties": {
+        "templateFile": "forager-web-dev.template.json",
+        "tags": {
+          "project": "forager-web"
+        },
+        "validateOnSynth": false,
+        "assumeRoleArn": "arn:${AWS::Partition}:iam::640202414923:role/cdk-hnb659fds-deploy-role-640202414923-us-east-1",
+        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::640202414923:role/cdk-hnb659fds-cfn-exec-role-640202414923-us-east-1",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-640202414923-us-east-1/f08b4d7cea66429626df1f6e7047a4d55a491dce71679d51836c789cdeee73be.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
+        "additionalDependencies": [
+          "forager-web-dev.assets"
+        ],
+        "lookupRole": {
+          "arn": "arn:${AWS::Partition}:iam::640202414923:role/cdk-hnb659fds-lookup-role-640202414923-us-east-1",
+          "requiresBootstrapStackVersion": 8,
+          "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+        }
+      },
+      "dependencies": [
+        "forager-web-dev.assets"
+      ],
+      "metadata": {
+        "/forager-web-dev": [
+          {
+            "type": "aws:cdk:stack-tags",
+            "data": [
+              {
+                "Key": "project",
+                "Value": "forager-web"
+              }
+            ]
+          }
+        ],
+        "/forager-web-dev/vpcConnector/SecurityGroup/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "vpcConnectorSecurityGroupA0B363B9"
+          }
+        ],
+        "/forager-web-dev/vpcConnector/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "vpcConnector1B161411"
+          }
+        ],
+        "/forager-web-dev/forager-web-dev/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "foragerwebdev4BCD7602"
+          }
+        ],
+        "/forager-web-dev/CDKMetadata/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadata"
+          }
+        ],
+        "/forager-web-dev/BootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BootstrapVersion"
+          }
+        ],
+        "/forager-web-dev/CheckBootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CheckBootstrapVersion"
+          }
+        ]
+      },
+      "displayName": "forager-web-dev"
+    },
+    "Tree": {
+      "type": "cdk:tree",
+      "properties": {
+        "file": "tree.json"
+      }
+    }
+  }
+}
