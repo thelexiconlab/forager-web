@@ -1,3 +1,4 @@
+# forager-web
 # Contains functions from run_foraging rewritten to support API requests in the api_router module.
 # Changes:
 # - retrieve_data() accepts a file object, not path.
