@@ -2,10 +2,10 @@
 
 (cd .. & pipenv install -d)
 # Development deploy
-pipenv run cdk --profile faculty deploy
+# pipenv run cdk --profile faculty deploy
 
 # Production deploy
-# pipenv run cdk --profile faculty --context deployType=prod deploy
+pipenv run cdk --profile faculty --context deploymentType=prod deploy
 
 echo "Infrastructure deployed!"
 echo "To delete:"

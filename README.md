@@ -2,7 +2,7 @@
 
 # Forager 
 
-A web application which accepts uploaded .txt data. The website runs the forager module with the selected switch and model, returning the results as a zip files containing user csvs. 
+A web application which accepts uploaded .txt data. The website runs the forager module with the selected switch and model, returning the results as a zip files containing user csvs.
 
 ## Dependencies
 - Python (dependencies in `requirements.txt`)
