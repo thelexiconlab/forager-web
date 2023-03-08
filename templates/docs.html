@@ -57,6 +57,8 @@ which are then processed further to compute clusters/switches and derive model e
 
   </ol>
 
+  The file <code>_switchresults.csv</code> will contain the item-level cluster/switch designations for each method. A switch is indicated by a 1, and a cluster is indicated by a 0. 
+
   <h2 id="models">Models</h2>
 
  <p>forager comes with several foraging models that can be fit to VFT data (static, dynamic, etc.). The models differ in their 
@@ -64,7 +66,7 @@ which are then processed further to compute clusters/switches and derive model e
    Details of computational models are provided in Hills et al. (2012) and Kumar, Lundin, & Jones (2022), as well as in the package 
    documentation, although we provide brief descriptions below. Users can run a single model, a subset of models, or all models for 
    comparison. Each model will calculate the overall negative log-likelihood (NLL) of the data, as well as participant- and 
-   item-level NLLs. </p> 
+   item-level NLLs. <b>Lower NLLs indicate a better fit and model. </b></p> 
 
    <ol>
   <li><b>Static foraging model. </b>The static model (Hills et al., 2012) uses semantic similarity and word frequency to calculate the probability of retrieving an item without consideration of transitions between clusters. </li>
@@ -77,12 +79,25 @@ which are then processed further to compute clusters/switches and derive model e
 
     Three output files are generated when forager is run. These contain:
     <ol>
- <li>Item-wise lexical metrics (semantic similarity, phonological similarity, and word frequency) as well as the item-wise NLLs for each chosen model and switch method (ends with _individualitemfits.csv)</li>
- <li>The switch designations for each item for each selected switch method (ends with _switchresults.csv), and </li>
- <li>The model results with the optimal parameter values and NLL for each model and switch method run (ends with _modelresults.csv). </li>
+ <li><b>Item-wise lexical metrics</b> (semantic similarity, phonological similarity, and word frequency) as well as the item-wise NLLs for each chosen model and switch method (ends with <code>_nll_results.csv</code>). The semantic and phonological similarities indicate the similarity between the previous item and current item, whereas the frequency values indicate the frequency of the current item in the English language (obtained via Google N-grams). The item-wise NLLs indicate the likelihood of producing the current item under a given switch method and model. Overall, lower NLLs indicate a better fit and model. </li>
+ <li><b>The switch designations</b> for each item for each selected switch method (ends with <code>_switch_results.csv</code>), where a switch is indicated by a 1 and 0s indicate items belonging to the same cluster. </li>
+ <li><b>The model results</b> with the optimal parameter values and NLL for each model and switch method run at the subject level (ends with <code>_model_results.csv</code>). As before, lower NLLs indicate a better model fit. The <code>Beta_</code> columns contain the best-fitting parameter values for the semantic, phonology, and frequency sources for a given model. If a given model only uses one or two of the three lexical sources, then the other <code>Beta_</code> columns will be empty. </li>
 
     </ol>
 
     Possible analyses with forager include finding the best-fitting model for a set of fluency lists, evaluating the performance of a specific model, obtaining metrics of semantic and/or phonological similarity as well as different cluster/switch designations, and comparing the model performance for different groups. 
+   </p>
+
+
+   <h2 id="refs">References</h2>
+   <p>
+
+    Users are encouraged to cite the following references when using <i>forager</i>:
+    <ol>
+ <li>Kumar, A.A., Apsel, M., Zhang, L., Xing, N., Jones. M.N. (2023). forager: A Python package and web interface for modeling mental search</li>
+ <li>Kumar, A.A., Lundin, N. B., Jones, M.N. (2022). Mouse-mole-vole: The inconspicuous benefits of phonology during retrieval from semantic memory. In <i>Proceedings of the 44th Annual Meeting of the Cognitive Science Society</i>.</li>
+ <li>Hills, T. T., Jones, M. N., & Todd, P. M. (2012). Optimal foraging in semantic memory. <i>Psychological Review</i>, <i>119</i>(2), 431.</li>
+
+    </ol>
    </p>
 <% endblock %>
