@@ -6,7 +6,7 @@
 
 <% block content %>
 
-<p>Welcome! <i>forager</i> is a Python-based web interface to analyze verbal fluency data. You can use <i>forager</i> to obtain cluster-switch designations based on a variety of methods, run computational models of search (based on optimal foraging), and also obtain estimates of semantic similarity, phonological similarity, and frequency for items produced by participants.</p>
+<p>Welcome! <i>forager</i> is a Python-based web interface to analyze verbal fluency task (VFT) data. You can use <i>forager</i> to obtain cluster-switch designations based on a variety of methods, run computational models of search (based on optimal foraging), and also obtain estimates of semantic similarity, phonological similarity, and frequency for items produced by participants.</p>
 
 <p>To know more about <i>forager</i>, explore the tabs on the sidebar.</p>
 <p>On this page, you can upload verbal fluency data and run the forager model for the <i>animals</i> category.  </p>
@@ -14,8 +14,8 @@
 <b>Please note:</b>
 <ul>
     <li>We do not save any uploaded data.</li>
-    <li>Currently, the web interface only allows processing of VFT data for animals. If you wish to analyze other domains, please download and run the package locally by uploading your own norms.</li>
-    <li>This web app uses the default policy for out-of-vocabulary (OOV) words (see about page). You can make individual
+    <li>Currently, the web interface only allows processing of VFT data for <i>animals</i>. If you wish to analyze other domains, please download and run the package locally by uploading your own norms.</li>
+    <li>This web app uses the default policy for out-of-vocabulary (OOV) words (see Docs via sidebar). You can make individual
         replacements and truncations by downloading and running the forager package locally.</li>
 </ul>
 
@@ -191,7 +191,7 @@
                 </p>
                 <p>
                     <button id="eval-data-button" ng-click="evaluateDataButton()">Check Data</button>
-                    <label for="eval-data-button"> - Check if all words are in forager's vocabulary set.</label>
+                    <label for="eval-data-button"> - Check if all words are in forager's vocabulary set. This process may take a few minutes. <b>Note:</b> If you get an upload error, please check that the ID and word columns in your file are separated by exactly 8 spaces (a standard tab).</label>
                 </p>
             </div>
 
@@ -239,7 +239,7 @@
                     <label for="getModel"> Model and NLL results </label><br>
 
                 </div>
-                <p><br>Click 'Run Model' below to generate .csv files of the selected results. Computations including model/nll results may take a longer time.</p>
+                <p><br>Click 'Run Model' below to generate .csv files of the selected results. Computations including model/nll results may take a longer time. You will be prompted to download the results when they are ready. Please wait...</p>
 
                 
 
@@ -259,5 +259,17 @@
         </div>
     </div>
 </div>
+
+<h2 id="refs">References</h2>
+   <p>
+
+    Users are encouraged to cite the following references when using <i>forager</i>:
+    <ol>
+ <li>Kumar, A.A., Apsel, M., Zhang, L., Xing, N., Jones. M.N. (2023). forager: A Python package and web interface for modeling mental search.</li>
+ <li>Kumar, A.A., Lundin, N. B., Jones, M.N. (2022). Mouse-mole-vole: The inconspicuous benefits of phonology during retrieval from semantic memory. In <i>Proceedings of the 44th Annual Meeting of the Cognitive Science Society</i>.</li>
+ <li>Hills, T. T., Jones, M. N., & Todd, P. M. (2012). Optimal foraging in semantic memory. <i>Psychological Review</i>, <i>119</i>(2), 431.</li>
+
+    </ol>
+   </p>
 
 <% endblock %>
