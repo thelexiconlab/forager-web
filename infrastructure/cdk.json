@@ -2,6 +2,13 @@
     "app": "python3 infrastructure.py",
     "context": {
         "project": "forager-web",
+        "tags": {
+            "CostCenter": "429353",
+            "compliance": "none",
+            "classification" : "Public",
+            "managedby" : "houser@bowdoin.edu",
+            "managedfor" : "a.kumar@bowdoin.edu"
+        },
 
         "region": "us-east-1",
         "account": "640202414923",
