@@ -1,0 +1,122 @@
+Description: Forager Application Production
+Resources:
+  vpcConnectorSecurityGroupA0B363B9:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: forager-web/vpcConnector/SecurityGroup
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+      Tags:
+        - Key: classification
+          Value: Public
+        - Key: compliance
+          Value: none
+        - Key: CostCenter
+          Value: "429353"
+        - Key: environment
+          Value: prod
+        - Key: managedby
+          Value: houser@bowdoin.edu
+        - Key: managedfor
+          Value: a.kumar@bowdoin.edu
+        - Key: project
+          Value: forager-web
+      VpcId: vpc-01b8470d4eb93b108
+    Metadata:
+      aws:cdk:path: forager-web/vpcConnector/SecurityGroup/Resource
+  vpcConnector1B161411:
+    Type: AWS::AppRunner::VpcConnector
+    Properties:
+      Subnets:
+        - subnet-08b68eaca2b8fecff
+        - subnet-0b282e96c2649c211
+      SecurityGroups:
+        - Fn::GetAtt:
+            - vpcConnectorSecurityGroupA0B363B9
+            - GroupId
+      Tags:
+        - Key: classification
+          Value: Public
+        - Key: compliance
+          Value: none
+        - Key: CostCenter
+          Value: "429353"
+        - Key: environment
+          Value: prod
+        - Key: managedby
+          Value: houser@bowdoin.edu
+        - Key: managedfor
+          Value: a.kumar@bowdoin.edu
+        - Key: project
+          Value: forager-web
+    Metadata:
+      aws:cdk:path: forager-web/vpcConnector/Resource
+  foragerweb5EE2B96B:
+    Type: AWS::AppRunner::Service
+    Properties:
+      SourceConfiguration:
+        AuthenticationConfiguration:
+          ConnectionArn: arn:aws:apprunner:us-east-1:640202414923:connection/forager-apprunner-houser/de731298cb4d458f97faff3b049db3a6
+        CodeRepository:
+          CodeConfiguration:
+            CodeConfigurationValues:
+              BuildCommand: pip install pipenv && pipenv install
+              Runtime: PYTHON_3
+              StartCommand: pipenv run gunicorn -w 4 --bind 0.0.0.0:8080 --access-logfile=- --timeout=1800 application:application
+            ConfigurationSource: API
+          RepositoryUrl: https://github.com/thelexiconlab/forager-web
+          SourceCodeVersion:
+            Type: BRANCH
+            Value: main
+      InstanceConfiguration: {}
+      NetworkConfiguration:
+        EgressConfiguration:
+          EgressType: VPC
+          VpcConnectorArn:
+            Fn::GetAtt:
+              - vpcConnector1B161411
+              - VpcConnectorArn
+      Tags:
+        - Key: classification
+          Value: Public
+        - Key: compliance
+          Value: none
+        - Key: CostCenter
+          Value: "429353"
+        - Key: environment
+          Value: prod
+        - Key: managedby
+          Value: houser@bowdoin.edu
+        - Key: managedfor
+          Value: a.kumar@bowdoin.edu
+        - Key: project
+          Value: forager-web
+    Metadata:
+      aws:cdk:path: forager-web/forager-web/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/1WOywrCMBBFv6X7ZPoQdCt04VYquJU4jjS2JiFNlBLy76a0Kl1d7pyZw1Sw3UEoMvEeON463ssrhJMT2LGGBu0tEkvsEgirBAi9lW48WO0Nq+9qNYhMGGO9UmQhJHg2WOvU0Gk7L9uXRIpxKl97ZAUXvWkFFNl++SKf8udacFjp/q7j6Fqt8g2UJVTZY5CSpzsnnwTNnB9HTq/O5AAAAA==
+    Metadata:
+      aws:cdk:path: forager-web/CDKMetadata/Default
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+Rules:
+  CheckBootstrapVersion:
+    Assertions:
+      - Assert:
+          Fn::Not:
+            - Fn::Contains:
+                - - "1"
+                  - "2"
+                  - "3"
+                  - "4"
+                  - "5"
+                - Ref: BootstrapVersion
+        AssertDescription: CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.
+
