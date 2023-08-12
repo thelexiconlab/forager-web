@@ -1,0 +1,10 @@
+1	muffin2
+1	cat
+1	dug
+2	hors
+2	anemone
+2	jaguar
+2	peanut butter
+3	peanut
+3	bluejay
+3	peanut butter

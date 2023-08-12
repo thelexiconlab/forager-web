@@ -1,7 +1,7 @@
 <% extends 'base.html' %>
 
 <% block header %>
-  <h1>Docs</h1>
+  <h1>forager docs</h1>
 <% endblock %>
 
 <% block content %>
@@ -9,7 +9,7 @@
 <div id="section">
 <p>This page contains more information about the key components of <i>forager:</i> <a href="#data">data</a>, the <a href="#oov">default policy for handling out-of-vocabulary words</a>, <a href="#switch">switch methods</a>, <a href="#models">models</a>, and <a href=#out>outputs</a>. </p>
 </div>
-<h2 id="data"> Data </h2>
+<h2 id="data"> data </h2>
 <p>To use forager on one’s own data, the user needs to upload a <b>single text file of fluency lists</b>  with two columns: 
 one for the participant identifier and one for the item they produced. For example, if participant 1 had 
 30 response items, there would be 30 rows with “1” in the first column, one for each item in their fluency list.
@@ -23,7 +23,7 @@ acceptable words and corresponding semantic embeddings for that category and der
 data using the functions provided in the package. In the future, we hope to expand the functionality of 
 the package by providing predefined lexical data for multiple categories. </p>
 
-<h2 id="oov"> Handling out-of-vocabulary (OOV) words </h2>
+<h2 id="oov"> handling out-of-vocabulary (OOV) words </h2>
 
 <p>All search-related functions in forager rely on the lexical measures mentioned above. 
 Therefore, the items in the fluency lists must be in the stored lexicon (i.e., in the files containing the embeddings, 
@@ -46,7 +46,7 @@ The user can then choose to replace the item with one of the matches or truncate
 The final result of the data preparation process is a data frame of fluency lists that contains only acceptable words, 
 which are then processed further to compute clusters/switches and derive model estimates.</p>
 
-<h2 id="switch">Switch Methods</h2>
+<h2 id="switch">switch methods</h2>
 
 <p>forager provides four different methods for determining clusters and switches in a fluency list: 
   <ol>
@@ -57,9 +57,9 @@ which are then processed further to compute clusters/switches and derive model e
 
   </ol>
 
-  The file <code>_switchresults.csv</code> will contain the item-level cluster/switch designations for each method. A switch is indicated by a 1, and a cluster is indicated by a 0. 
+  The file <code>_switchresults.csv</code> will contain the item-level cluster/switch designations for each method. A switch is indicated by a 1, and a cluster is indicated by a 0. A value of 2 indicates that no designation was available for that item (e.g., the first item in a list). Rows with a value of 2 should be removed before any comparisons or analyses.
 
-  <h2 id="models">Models</h2>
+  <h2 id="models">models</h2>
 
  <p>forager comes with several foraging models that can be fit to VFT data (static, dynamic, etc.). The models differ in their 
   use of three lexical sources (semantic similarity, phonological similarity, and frequency) during cluster and switch transitions.
@@ -74,7 +74,7 @@ which are then processed further to compute clusters/switches and derive model e
   <li><b>Phonology-based models. </b>In addition to the classic foraging models described above, we also introduce and release a range of experimental models that explore the influence of phonology in local (within-cluster) and global (between-cluster) transitions. Specifically, we adapted the static and dynamic models from Hills et al. (2012) to incorporate phonological similarity cues, based on recent work by Kumar, Lundin, and Jones (2022). The static phonology model is identical to the static model above, except that the product of the frequencies and semantic similarities is also multiplied by phonological similarities. Like the frequency and semantic similarity cues, the phonological similarity is also weighted by a saliency parameter. The dynamic phonology model has an additional argument specifying the type of phonological cue used from the following options: “local,” “global,” or “switch.” The “local” dynamic model incorporates phonological similarity as an additional cue for within-cluster transitions. The “global” dynamic model incorporates phonological similarity in both switch and cluster transitions. Finally, the “switch” dynamic model computes the likelihood of an item based on phonological similarity and frequency for switch transitions and based on semantic similarity and frequency for cluster transitions. </li>
    </ol>
 
-   <h2 id="out">Outputs</h2>
+   <h2 id="out">outputs</h2>
    <p>
 
     Three output files are generated when forager is run. These contain:
@@ -89,7 +89,7 @@ which are then processed further to compute clusters/switches and derive model e
    </p>
 
 
-   <h2 id="refs">References</h2>
+   <h2 id="refs">citation</h2>
    <p>
 
     Users are encouraged to cite the following references when using <i>forager</i>:

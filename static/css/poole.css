@@ -113,6 +113,110 @@ strong {
   color: #303030;
 }
 
+/* styles.css */
+/* Apply custom styles to the buttons */
+button {
+  background-color: #3498db;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  margin: 5px;
+}
+
+button:active {
+  background-color: #555; /* Slightly darker color */
+}
+
+.button-container {
+  display: flex;
+  gap: 10px;
+}
+
+.dropdown {
+  position: relative;
+  margin-top: 10px; /* Adjust this value to control the spacing between button and dropdown */
+}
+
+/* styles.css */
+.tooltip {
+  position: relative;
+}
+
+.tooltiptext {
+  visibility: hidden;
+  width: 200px;
+  background-color: #333;
+  color: white;
+  text-align: center;
+  border-radius: 5px;
+  padding: 5px;
+  position: absolute;
+  z-index: 1;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 0.95;
+}
+
+select#select-switch-dropdown {
+  width: 400px; /* Set width of the dropdown */
+  font-size: 16px; /* Adjust the font size as needed */
+  padding: 10px; 
+  max-height: 500px; /* Adjust the value to your preferred height */
+}
+
+
+/* Modify styles for the "Get Cluster-Switch Values" button */
+#get-sims {
+  background-color: #cdb42b;
+}
+#get-sims:active {
+  background-color: #555; /* Slightly darker color */
+}
+
+/* Modify styles for the "Get Cluster-Switch Values" button */
+#get-switch {
+  background-color: #e74c3c;
+}
+
+#get-switch:active {
+  background-color: #555; /* Slightly darker color */
+}
+
+/* Modify styles for the "Run Models" button */
+#get-models {
+  background-color: #2ecc71;
+}
+
+#get-models:active {
+  background-color: #555; /* Slightly darker color */
+}
+
+.get-results{
+  background-color: #9034db;
+}
+
+.custom-file-input-label {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: white;
+  color: #3498db; /* Set the text color to a contrasting color */
+  border: 2px solid #3498db; /* Set border width and color */
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+
 
 /* Lists */
 ul, ol, dl {

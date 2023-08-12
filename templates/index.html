@@ -1,24 +1,17 @@
 <% extends 'base.html' %>
 
 <% block header %>
-  <h1>forager: A web-interface for modeling mental search</h1>
+  <h1>forager</h1>
 <% endblock %>
 
 <% block content %>
 
-<p>Welcome! <i>forager</i> is a Python-based web interface to analyze verbal fluency task (VFT) data. You can use <i>forager</i> to obtain cluster-switch designations based on a variety of methods, run computational models of search (based on optimal foraging), and also obtain estimates of semantic similarity, phonological similarity, and frequency for items produced by participants.</p>
+<p>Welcome! <i>forager</i> is a Python-based web interface to analyze verbal fluency task (VFT) data. </p>
+<p>You can use <i>forager</i> to obtain cluster-switch designations based on a variety of methods, 
+    run computational models of search (based on optimal foraging), and also obtain estimates of semantic similarity, 
+    phonological similarity, and frequency for items produced by participants.</p>
 
-<p>To know more about <i>forager</i>, explore the tabs on the sidebar.</p>
-<p>On this page, you can upload verbal fluency data and run the forager model for the <i>animals</i> category.  </p>
-
-<b>Please note:</b>
-<ul>
-    <li>We do not save any uploaded data.</li>
-    <li>Currently, the web interface only allows processing of VFT data for <i>animals</i>. If you wish to analyze other domains, please download and run the package locally by uploading your own norms.</li>
-    <li>This web app uses the default policy for out-of-vocabulary (OOV) words (see Docs via sidebar). You can make individual
-        replacements and truncations by downloading and running the forager package locally.</li>
-</ul>
-
+<p>To know more about <i>forager</i>, explore the tabs on the sidebar, such as our <a href="docs">docs</a> or <a href="about">about</a> page. </p>
 
 <!--ANGULARJS PORTION-->
 <div layout:fragment="content">
@@ -48,33 +41,65 @@
             };
         }]);
 
-        app.controller('populateCtrl', function ($scope, $http, $q) {
+        app.controller('populateCtrl', function ($scope, $window, $http, $q) {
             // Initialize values
             $scope.selectResults = ['Switch', 'Model']
-            $scope.selectedModel = "dynamic";
-            $scope.selectedSwitch = "troyer";
+           // $scope.selectedModel = "dynamic";
             $scope.zipFolderName = "";
             $scope.evaluationMessage = "";
             $scope.evalErrorMessage = "";
             $scope.validEntries = false;
             $scope.evaluationSuccess = false;
             $scope.inProgress = false;
+            
 
+
+            $scope.selectedOption = ''; // Initialize the selected option
+            $scope.selectedSwitch = ''; // Initialize the selected switch
+            $scope.showUploadSection = false; // Initialize the flag for showing the upload section
+            $scope.showCheckDataButton = false; // Initialize the flag for showing the "Check Data" button
+            $scope.showResultsButton = false; // Initialize the flag for showing the "Get Results" button
+
+            $scope.selectOption = function(option) {
+                $scope.selectedOption = option;
+
+                // Reset other variables if needed
+                $scope.selectedSwitch = '';
+                $scope.showUploadSection = false;
+                $scope.showCheckDataButton = false;
+                $scope.showResultsButton = false;
+
+                if ($scope.selectedOption === 'get-models') {
+                    // Redirect to the desired link for "get-models" option
+                    window.open('https://thelexiconlab.github.io/', '_blank');
+                }
+
+                else{
+                // Update the visibility of the file upload section based on selected option
+                $scope.showUploadSection = ($scope.selectedOption === 'get-sims') || 
+                          ($scope.selectedOption === 'get-switch' && $scope.selectedSwitch !== '');
+                }
+
+            };
+
+        
+            
             // Evaluate data on button press
-            $scope.evaluateDataButton = function () {
+            $scope.evaluateDataButton = function (oov_choice) {
                 if (typeof $scope.userFile === "undefined") {
                     $scope.evalErrorMessage = "Please select a file.";
                     $scope.evaluationSuccess = false;
                 }
                 else {
                     $scope.evalErrorMessage = "";
-                    var response = $scope.retrieveDataEvaluation($scope.userFile);
+                    var response = $scope.retrieveDataEvaluation($scope.userFile, oov_choice);
                     $scope.evaluationSuccess = true;
+                    $scope.showResultsButton = true;
                 }
             }
 
             // Retrieve results on button press
-            $scope.retrieveResultsButton = function () {
+            $scope.retrieveSimsButton = function () {
                 var file = $scope.userFile;
 
                 $scope.validateEntries();
@@ -85,12 +110,29 @@
                     $scope.evalErrorMessage = "";
 
                     // generate results folder name
-                    var switchName = $scope.getSwitch ? $scope.selectedSwitch : 'none';
-                    $scope.zipFolderName = [file.name.split('.')[0], 'model', $scope.selectedModel, 'switch',
-                    switchName, 'results'].join('_');
+
+                    $scope.zipFolderName = [file.name.split('.')[0], 'forager'].join('_');
 
                     // make HTTP Request
-                    $scope.retrieveModelResults(file, $scope.selectedModel, $scope.selectedSwitch);
+                    $scope.retrieveSimilarityResults(file);
+                }
+            };
+
+            $scope.retrieveResultsButton = function(selectedOption, selectedSwitch){
+                var file = $scope.userFile;
+
+                $scope.validateEntries();
+
+                if ($scope.validEntries)  {
+                    $scope.inProgress = true;
+                    console.log($scope.inProgress)
+                    $scope.evalErrorMessage = "";
+
+                    $scope.zipFolderName = [file.name.split('.')[0], 'forager'].join('_');
+
+                    // make HTTP Request
+
+                    $scope.retrieveResults(file, $scope.selectedOption, $scope.selectedSwitch);
                 }
             };
 
@@ -98,19 +140,21 @@
             $scope.validateEntries = function(){
                 $scope.validEntries = false;
                 if (typeof $scope.userFile === "undefined") {
-                    $scope.resultsErrorMessage = "Please select a file.";
+                    $scope.resultsErrorMessage = "Please upload a file.";
                 } 
-                else if ($scope.getSwitch != true && $scope.getModel != true && $scope.getNll != true) {
-                    $scope.resultsErrorMessage = "Please select at least one output.";
-                } else {
+                //else if ($scope.getSwitch != true){// && $scope.getModel != true && $scope.getNll != true) {
+                //    $scope.resultsErrorMessage = "Please select at least one output.";
+                //} 
+                else {
                     $scope.validEntries = true;
                 }
             }
 
             // HTTP request to evaluate data
-            $scope.retrieveDataEvaluation = function (file) {
+            $scope.retrieveDataEvaluation = function (file, oov_choice) {
                 var payload = new FormData();
                 payload.append('filename', file);
+                payload.append('selected-oov', oov_choice);
 
                 var requestBody = {
                     url: 'evaluate-data',
@@ -118,24 +162,67 @@
                     data: payload,
                     headers: { 'Content-Type': undefined },
                     transformRequest: angular.identity,
-                    responseType: String
+                    responseType: 'json'
                 }
-
+                
                 $http(requestBody).then(function (response) {
-                    $scope.evaluationMessage = response.data;
+                    // Parse the JSON response
+                    var responseData = response.data;
+
+                    console.log(responseData);
+
+                    // Update the message to display
+                    $scope.evaluationMessage = responseData.message;
+                    console.log($scope.evaluationMessage)
+                    
                     $scope.evaluationSuccess = true;
+
+                    // Show the download button
+                    $scope.showDownloadButton = true;
+
+
+                    $scope.zipContent = responseData.zipContent;
+                    }).catch(function (data) {
+                    $scope.resultsErrorMessage = "Server could not process results. Check that data is properly formatted.";
+                    $scope.inProgress = false;
                 });
 
             }
 
+            $scope.downloadZipFile = function () {
+                // Create a Blob from the base64-encoded zip content
+                var zipBlob = new Blob([Uint8Array.from(atob($scope.zipContent), c => c.charCodeAt(0))], { type: 'application/zip' });
+
+                // Create a download URL for the zip file
+                var downloadUrl = (window.URL || window.webkitURL).createObjectURL(zipBlob);
+
+                // Create a temporary anchor element
+                var anchor = document.createElement('a');
+                anchor.href = downloadUrl;
+                anchor.download = 'evaluation_results.zip';
+
+                // Trigger the click event on the anchor element
+                anchor.click();
+
+                // Clean up the temporary anchor
+                anchor.remove();
+            };
+
             // HTTP request to run forager
-            $scope.retrieveModelResults = function (file, selectedModel, selectedSwitch) {
+            $scope.retrieveResults = function (file, selectedOption, selectedSwitch) {
                 var payload = new FormData();
                 payload.append('filename', file);
-                payload.append('selected-model', selectedModel);
-                payload.append('selected-switch', selectedSwitch);
+                
+                console.log("selectedSwitch=", selectedSwitch);
+                console.log("selectedOption=", selectedOption);
 
-                var payloadUrl = "/run-model?switch=" + $scope.getSwitch + "&model=" +$scope.getModel; 
+                if(selectedOption === 'get-sims'){
+                    payload.append('selected-sims', 'sims');
+                } else if(selectedOption === 'get-switch'){
+                    payload.append('selected-switch', selectedSwitch);
+                }
+
+                var payloadUrl = "/run-model" 
 
                 var requestBody = {
                     url: payloadUrl,
@@ -180,18 +267,59 @@
     <div id="run-online" ng-app="myApp" ng-controller="populateCtrl">
         <div>
 
-            <!--File upload-->
-            <div>
-                <h2> Run forager</h2>
-                <h3>1) Upload data</h3>
-                <p>Upload data as a tab-delimited .txt file, with columns for subject ID and words:</p>
+            
+            <!--first ask what the user wants to do-->
 
-                <p>
-                    <input type="file" file-model="userFile" accept=".txt" id="upload-file" />
-                </p>
-                <p>
-                    <button id="eval-data-button" ng-click="evaluateDataButton()">Check Data</button>
-                    <label for="eval-data-button"> - Check if all words are in forager's vocabulary set. This process may take a few minutes. <b>Note:</b> If you get an upload error, please check that the ID and word columns in your file are separated by exactly 8 spaces (a standard tab).</label>
+            <div>
+                <h2>what would you like to do?</h2>
+
+                <div class="button-container">
+                    <button id="get-sims" ng-click="selectOption('get-sims')" class="tooltip">
+                        Get Lexical Similarity Values
+                        <span class="tooltiptext">This option will provide estimates of consecutive semantic and phonological similarity for fluency items, as well as word frequency estimates for the items in your data.</span>
+                    </button>
+                    <button id="get-switch" ng-click="selectOption('get-switch'); showDropdown = !showDropdown" class="tooltip">
+                        Get Cluster-Switch Values
+                        <span class="tooltiptext">This option will provide cluster-switch designations for each transition in your fluency data, based on the method you select. A drop down will appear once you click this option to select one of the methods or all of them. Selecting this option will also automatically provide lexical similarity values, in addition to cluster-switch designations.</span>
+                    </button>
+                    <button id="get-models" ng-click="selectOption('get-models')" class="tooltip">
+                        Run Search Models
+                        <span class="tooltiptext">This option will allow you to implement computational search models on your VFT data. You will be redirected to a Google Colab notebook for the same, where you will upload data and select which models you want to examine.</span>
+                    </button>
+                </div>
+
+                <div class="dropdown" ng-show="selectedOption === 'get-switch' && showDropdown">
+                    <!-- Dropdown content here -->
+                    <select ng-model="selectedSwitch" id = "select-switch-dropdown">
+                        <option value="">Select a scoring method</option>
+                        <option value="troyer">troyer</option>
+                        <option value="simdrop">simdrop</option>
+                        <option value="delta">delta</option>
+                        <option value="multimodal">multimodal</option>
+                        <option value="all">all</option>
+                    </select>
+                </div>
+                
+            
+            <!-- File upload -->
+            <div ng-show="(selectedOption === 'get-sims') || (selectedOption === 'get-switch' && selectedSwitch !== '')">
+                
+                <h3>Upload your data</h3>
+                <p>Upload data as a tab-delimited .txt file, with columns for subject ID and words:</p>
+            
+                <label class="custom-file-input-label">
+                    <input type="file" file-model="userFile" accept=".txt, .csv" id="upload-file" />
+                </label>
+                <p ng-show="userFile">
+                    <br> Please select how you would like forager to handle words that are out of the vocabulary set (OOV) and do not have any reasonable replacements. We recommend excluding them from the analysis.
+                    <select ng-model="userChoice" ng-show="userFile">
+                        <option value="">Select an option</option>
+                        <option value="exclude">Exclude OOV</option>
+                        <option value="truncate">Truncate after OOV</option>
+                        <option value="random">Assign a random vector to OOV</option>
+                    </select>
+                    <!-- Pass the selected choice to the evaluateDataButton function -->
+                    <button id="eval-data-button" ng-click="evaluateDataButton(userChoice)" ng-show="userFile && userChoice">Check Data</button>
                 </p>
             </div>
 
@@ -201,75 +329,56 @@
             <pre>{{ evaluationMessage }}</pre>
             </p>
 
-            <!--Run model-->
+            <p>{{ downloadMessage }}</p>
+            <button ng-show="showDownloadButton" ng-click="downloadZipFile()">Download Corrected Data Files</button>
+
+            
+            <!-- Show "Get Results" button after checking data -->
+            <p ng-show="showResultsButton">
+                <br><br> If you would like to proceed with the corrected data, please click the button below.
+                Otherwise, please upload a new file and re-run the evaluation. <br><br>
+                <span style="color:red">
+                NOTE: Before you upload a new file, please make sure to refresh the page to clear the data from the previous run.
+                </span>
+                <br><br>
+                <button ng-click="retrieveResultsButton(selectedOption, selectedSwitch)" class="get-results">Get Results</button>
+            </p>
+
+            <p ng-show="selectedOption === 'get-models'">This interface currently supports obtaining 
+                similarity and cluster-switch values. To run foraging models, 
+                please use the Colab notebook to which you have been redirected.
+            </p>
+            
+
             <div>
-                <h3>2) Run model</h3>
-
-                <p>Select the model and switch to use on data.</p>
-
-                <!-- Select model and switch -->
-
-                <p>
-                    <select ng-model="selectedSwitch" name="select-switch" id="select-switch">
-                        <option value="troyer">troyer</option>
-                        <option value="simdrop">simdrop</option>
-                        <option value="multimodal">multimodal</option>
-                        <option value="all">all</option>
-                    </select>
-                    <label for="select-switch"> - Select switch.</label>
-                </p>
-
-                <p>
-                    <select ng-model="selectedModel" name="select-model" id="select-model">
-                        <option value="dynamic">dynamic</option>
-                        <option value="pstatic">pstatic</option>
-                        <option value="pdynamic">pdynamic</option>
-                        <option value="all">all</option>
-                    </select>
-                    <label for="select-model"> - Select model. </label>
-                </p>
-
-                <div>
-                    <h3>3) Select results</h3>
-                    <p>Which results would you like to compute?</p>
-                    <input ng-model="getSwitch" type="checkbox" id="getSwitch" name="getSwitch" value="getSwitch">
-                    <label for="getSwitch"> Switch Results </label><br>
-
-                    <input ng-model="getModel" type="checkbox" id="getModel" name="getModel" value="getModel">
-                    <label for="getModel"> Model and NLL results </label><br>
-
-                </div>
-                <p><br>Click 'Run Model' below to generate .csv files of the selected results. Computations including model/nll results may take a longer time. You will be prompted to download the results when they are ready. Please wait...</p>
-
-                
-
-                <p><button id="results-button" ng-click="retrieveResultsButton()">Run Model</button></p>
-                
-                <div style="text-align: center" ng-if = "inProgress">
-                    <p><i>Fetching Results...</i>
-                        <br><progress id="progress"></progress>
-                    </p>
-                    
-                </div>  
+               
 
                 <i>
                     {{ resultsErrorMessage }}
                 </i>
             </div>
+
+            
+            
+        </div>
+        <div>
+
+            <h2 id="refs">citation</h2>
+        <p>
+     
+         Users are encouraged to cite the following work when using <i>forager</i>:
+         <ol>
+      <li>Kumar, A.A., Apsel, M., Zhang, L., Xing, N., Jones. M.N. (2023). forager: A Python package and web interface for modeling mental search.</li>
+      <li>Kumar, A.A., Lundin, N. B., Jones, M.N. (2022). Mouse-mole-vole: The inconspicuous benefits of phonology during retrieval from semantic memory. In <i>Proceedings of the 44th Annual Meeting of the Cognitive Science Society</i>.</li>
+      <li>Hills, T. T., Jones, M. N., & Todd, P. M. (2012). Optimal foraging in semantic memory. <i>Psychological Review</i>, <i>119</i>(2), 431.</li>
+     
+         </ol>
+        </p>
+
         </div>
     </div>
 </div>
 
-<h2 id="refs">References</h2>
-   <p>
 
-    Users are encouraged to cite the following references when using <i>forager</i>:
-    <ol>
- <li>Kumar, A.A., Apsel, M., Zhang, L., Xing, N., Jones. M.N. (2023). forager: A Python package and web interface for modeling mental search.</li>
- <li>Kumar, A.A., Lundin, N. B., Jones, M.N. (2022). Mouse-mole-vole: The inconspicuous benefits of phonology during retrieval from semantic memory. In <i>Proceedings of the 44th Annual Meeting of the Cognitive Science Society</i>.</li>
- <li>Hills, T. T., Jones, M. N., & Todd, P. M. (2012). Optimal foraging in semantic memory. <i>Psychological Review</i>, <i>119</i>(2), 431.</li>
-
-    </ol>
-   </p>
 
 <% endblock %>

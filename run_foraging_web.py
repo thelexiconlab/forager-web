@@ -11,7 +11,7 @@ from scipy.optimize import fmin
 from forager.foraging import forage
 from forager.switch import switch_delta, switch_multimodal, switch_simdrop, switch_troyer
 from forager.cues import create_history_variables
-from forager.utils import prepare_web_data, evaluate_web_data
+from forager.utils import evaluate_web_data
 import pandas as pd
 import numpy as np
 from scipy.optimize import fmin
@@ -38,7 +38,8 @@ Workflow:
 """
 
 # Global Path Variabiles
-normspath = 'data/norms/troyernorms.csv'
+#normspath = 'data/norms/troyernorms.csv'
+normspath = 'data/norms/animals_snafu_scheme.csv'
 similaritypath = 'data/lexical_data/similaritymatrix.csv'
 frequencypath = 'data/lexical_data/frequencies.csv'
 phonpath = 'data/lexical_data/phonmatrix.csv'
@@ -50,7 +51,7 @@ switch_methods = ['simdrop', 'multimodal', 'troyer', 'delta', 'all']
 # Methods
 
 
-def get_evaluation_message(file):
+def get_evaluation_message(file, oov_choice='exclude'):
     """
     Returns text feedback on replacements and truncations that would be made within data. 
     Returns error message if evaluation was not successful. 
@@ -59,35 +60,38 @@ def get_evaluation_message(file):
 
     try:
 
-        oov, replacements, truncations = evaluate_web_data(
-            file, delimiter='\t')
-        rct = len(replacements)
-        tct = len(truncations)
+        data_df, replacement_df, data_lists = evaluate_web_data(file, delimiter='\t', oov_choice = oov_choice)
+        
+        exclude_count = (replacement_df["evaluation"] == "EXCLUDE").sum()
+        unk_count = (replacement_df["evaluation"] == "UNK").sum()
+        trunc_count = (replacement_df["evaluation"] == "TRUNCATE").sum()
+        replacement_count = (replacement_df["evaluation"] == "REPLACE").sum()
+        
+        if (replacement_count + trunc_count + exclude_count + unk_count == 0):
+            message = "Congrats! We have found all items from your data in our vocabulary. Please click the button below to get your results."
+            return message, replacement_df
+        
+        message += "We have found reasonable replacements for " + str(replacement_count)+ " item(s) in your data. \n\nAdditionally, "
 
-        if (rct + tct == 0):
-            return "There are no items from your data that are out of the vocabulary set (OOV). Every item will be evaluated."
+        if(oov_choice == 'exclude'):
+            message += "you chose to " + oov_choice + " OOV items."
+            message += " We found " + str(exclude_count) + " such instance(s) across all lists."
+        elif(oov_choice == 'truncate'):
+            message += "you chose to " + oov_choice + " the list after any OOV items. "
+            message += " We found " + str(trunc_count) + " such instance(s) across all lists."
+        else:
+            # oov_choice == 'random'
+            message += "you chose to assign a random vector to any OOV items."
+            # count how many replacement's keys are UNK
+            
+            message += " We found " + str(unk_count) + " such item(s) and assigned them a random vector, across all lists."
 
-        message += "There are " + \
-            str(oov) + " item(s) from your data that are out of the vocabulary set (OOV). The default policy is to replace any OOV item with the closest available word if the Levenshtein edit-distance is 2 or lower. "
-        message += "There would be " + \
-            str(rct) + " replacements and " + str(tct) + " truncations.\n\n"
-        message += "Replacements: \n"
-        message += "None" if rct == 0 else str(replacements)
-        message += "\n\nTruncations: \n"
-        message += "None" if tct == 0 else str(truncations)
+        message += "\n\nThe data set after evaluation AND the dataset that will be used for analysis are available for download by clicking the button below."
+
     except Exception as e:
         message = "Error while evaluating data. Please check that your file is properly formatted."
 
-    return message
-
-
-def retrieve_data(file):
-    """
-    1. Verify that data path exists. Make all truncations and replacements. 
-    """
-    data = prepare_web_data(file, delimiter='\t')
-    return data
-
+    return message, replacement_df, data_df, data_lists
 
 def get_lexical_data():
     norms = pd.read_csv(normspath, encoding="unicode-escape")
@@ -295,8 +299,30 @@ def run_all(data, model, switch):
 
     return synthesize_all_results(outputs)
 
+def run_sims(data):
 
-def run_switch(data, model, switch):
+    """
+    Perform only switch computations.   
+    Outputs a dataframe for switch results. 
+    """
+    print("Running sims")
+    # return synthesize_switch_results(outputs)
+
+    # Get Lexical Data needed for executing methods
+    norms, similarity_matrix, phon_matrix, frequency_list, labels = get_lexical_data()
+    outputs = []
+
+    # Run through each fluency list in dataset
+    for i, (subj, fl_list) in enumerate(tqdm(data)):
+        # Get History Variables
+        history_vars = create_history_variables(
+            fl_list, labels, similarity_matrix, frequency_list, phon_matrix)
+        
+        outputs.append([subj, fl_list, history_vars])
+
+    return synthesize_sim_results(outputs)
+
+def run_switch(data, switch):
     """
     Perform only switch computations.   
     Outputs a dataframe for switch results. 
@@ -351,6 +377,35 @@ def run_model_nll(data, model, switch):
 
     return synthesize_model_results(outputs), synthesize_nll_results(outputs)
 
+def synthesize_sim_results(outputs):
+
+    """
+    Returns dataframe containing results of switch computations. 
+    Params:
+    - Array of [subject, fluency list, switch names, and switch vectors] 
+    Output:
+    - Switch Vector Result(s)
+    """
+
+    sim_results = []
+
+    for output in outputs:
+        subj = output[0]
+        fl_list = output[1]    
+        df = pd.DataFrame()
+        df['Subject'] = len(fl_list) * [subj]
+        df['Fluency_Item'] = fl_list
+        # # add lexical metrics to switch results
+        df['Semantic_Similarity'] = output[2][0]
+        df['Frequency_Value'] = output[2][2]
+        df['Phonological_Similarity'] = output[2][4]
+
+        sim_results.append(df)
+
+    sim_results = pd.concat(sim_results, ignore_index=True)
+
+    return sim_results
+
 
 def synthesize_switch_results(outputs):
     """
@@ -377,8 +432,12 @@ def synthesize_switch_results(outputs):
             df['Fluency_Item'] = fl_list
             df['Switch_Value'] = switch
             df['Switch_Method'] = switch_methods[j]
+            # # add lexical metrics to switch results
+            df['Semantic_Similarity'] = output[4][0]
+            df['Frequency_Value'] = output[4][2]
+            df['Phonological_Similarity'] = output[4][4]
             switch_df.append(df)
-
+        
         switch_df = pd.concat(switch_df, ignore_index=True)
         switch_results.append(switch_df)
 

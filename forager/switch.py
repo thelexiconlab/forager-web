@@ -182,3 +182,4 @@ def switch_delta(fluency_list, semantic_similarity, rise_thresh, fall_thresh):
         previousState = currentState
 
     return switchVector
+
