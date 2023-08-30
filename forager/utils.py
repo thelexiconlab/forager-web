@@ -53,6 +53,9 @@ def evaluate_web_data(file, delimiter = '\t', oov_choice = 'exclude'):
                 elif oov_choice == "random":
                     # change all occurrences of word to "UNK"
                     replacements[word] = "UNK"
+                elif oov_choice == "process":
+                    # if they want to create embeddings on the fly, do that here
+                    replacements[word] = word
                 else: 
                     # truncate fluency list before instance of OOV item
                     while word in df.values:

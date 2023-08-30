@@ -51,6 +51,8 @@
             $scope.validEntries = false;
             $scope.evaluationSuccess = false;
             $scope.inProgress = false;
+            $scope.isLoadingResults = false;
+
             
 
 
@@ -59,6 +61,8 @@
             $scope.showUploadSection = false; // Initialize the flag for showing the upload section
             $scope.showCheckDataButton = false; // Initialize the flag for showing the "Check Data" button
             $scope.showResultsButton = false; // Initialize the flag for showing the "Get Results" button
+
+            $scope.OOVchoice = ''; // Initialize the selected OOV choice
 
             $scope.selectOption = function(option) {
                 $scope.selectedOption = option;
@@ -86,6 +90,7 @@
             
             // Evaluate data on button press
             $scope.evaluateDataButton = function (oov_choice) {
+                $scope.OOVchoice = oov_choice;
                 if (typeof $scope.userFile === "undefined") {
                     $scope.evalErrorMessage = "Please select a file.";
                     $scope.evaluationSuccess = false;
@@ -119,6 +124,8 @@
             };
 
             $scope.retrieveResultsButton = function(selectedOption, selectedSwitch){
+                // Set loading state to true when button is clicked
+                $scope.isLoadingResults = true;
                 var file = $scope.userFile;
 
                 $scope.validateEntries();
@@ -133,6 +140,8 @@
                     // make HTTP Request
 
                     $scope.retrieveResults(file, $scope.selectedOption, $scope.selectedSwitch);
+
+                    
                 }
             };
 
@@ -169,11 +178,11 @@
                     // Parse the JSON response
                     var responseData = response.data;
 
-                    console.log(responseData);
+                    
 
                     // Update the message to display
                     $scope.evaluationMessage = responseData.message;
-                    console.log($scope.evaluationMessage)
+                    
                     
                     $scope.evaluationSuccess = true;
 
@@ -182,9 +191,16 @@
 
 
                     $scope.zipContent = responseData.zipContent;
+
+                    $scope.resultsErrorMessageStyle = {
+                            color: 'red',
+                            fontWeight: 'bold'
+                        };
+                        
                     }).catch(function (data) {
-                    $scope.resultsErrorMessage = "Server could not process results. Check that data is properly formatted.";
+                    $scope.resultsErrorMessage = "Sorry! We could not process your data. Please make sure it is correctly formatted and try again. You may wish to refer to the documentation via the sidebar for more information.";
                     $scope.inProgress = false;
+                    
                 });
 
             }
@@ -213,12 +229,14 @@
                 var payload = new FormData();
                 payload.append('filename', file);
                 
-                console.log("selectedSwitch=", selectedSwitch);
-                console.log("selectedOption=", selectedOption);
-
-                if(selectedOption === 'get-sims'){
+                if(selectedOption === 'get-sims' && $scope.OOVchoice !== 'process'){
                     payload.append('selected-sims', 'sims');
-                } else if(selectedOption === 'get-switch'){
+                } 
+                else if(selectedOption === 'get-sims' && $scope.OOVchoice === 'process'){
+                    console.log("sending process")
+                    payload.append('selected-process', 'process');
+                } 
+                else if(selectedOption === 'get-switch'){
                     payload.append('selected-switch', selectedSwitch);
                 }
 
@@ -241,12 +259,27 @@
                     var anchor = document.createElement("a");
                     anchor.download = $scope.zipFolderName;
                     anchor.href = $scope.downloadUrl;
-                    $scope.resultsErrorMessage = "";
+                    $scope.resultsErrorMessage = "Success! Your download should begin shortly. Thanks for using forager!";
                     anchor.click();
                     $scope.inProgress = false;
+                    $scope.isLoadingResults = false;
+
+                    $scope.resultsErrorMessageStyle = {
+                        // set to dark green
+                            color: '#006400',
+                            fontWeight: 'bold'
+                        };
+
                 }).catch(function (data) {
-                    $scope.resultsErrorMessage = "Server could not process results. Check that data is properly formatted.";
+
+                    $scope.resultsErrorMessageStyle = {
+                            color: 'red',
+                            fontWeight: 'bold'
+                        };
+                    $scope.resultsErrorMessage = "Sorry! We could not process the results due to a technical error. Please try again.";
                     $scope.inProgress = false;
+                    $scope.isLoadingResults = false;
+                    
                 });
 
                 
@@ -271,11 +304,13 @@
             <!--first ask what the user wants to do-->
 
             <div>
-                <h2>what would you like to do?</h2>
+                <h2>what would you like forager to do?</h2>
+
+                <p> Hover over the buttons to learn more about each option.</p>
 
                 <div class="button-container">
                     <button id="get-sims" ng-click="selectOption('get-sims')" class="tooltip">
-                        Get Lexical Similarity Values
+                        Get Lexical Values
                         <span class="tooltiptext">This option will provide estimates of consecutive semantic and phonological similarity for fluency items, as well as word frequency estimates for the items in your data.</span>
                     </button>
                     <button id="get-switch" ng-click="selectOption('get-switch'); showDropdown = !showDropdown" class="tooltip">
@@ -292,10 +327,10 @@
                     <!-- Dropdown content here -->
                     <select ng-model="selectedSwitch" id = "select-switch-dropdown">
                         <option value="">Select a scoring method</option>
-                        <option value="troyer">troyer</option>
-                        <option value="simdrop">simdrop</option>
-                        <option value="delta">delta</option>
-                        <option value="multimodal">multimodal</option>
+                        <option value="troyer">Troyer norm-based</option>
+                        <option value="simdrop">Similarity-drop</option>
+                        <option value="delta">Delta Similarity</option>
+                        <option value="multimodal">Multimodal Similarity-drop</option>
                         <option value="all">all</option>
                     </select>
                 </div>
@@ -316,6 +351,7 @@
                         <option value="">Select an option</option>
                         <option value="exclude">Exclude OOV</option>
                         <option value="truncate">Truncate after OOV</option>
+                        <!--<option value="process">Generate on the fly</option>-->
                         <option value="random">Assign a random vector to OOV</option>
                     </select>
                     <!-- Pass the selected choice to the evaluateDataButton function -->
@@ -335,13 +371,15 @@
             
             <!-- Show "Get Results" button after checking data -->
             <p ng-show="showResultsButton">
-                <br><br> If you would like to proceed with the corrected data, please click the button below.
-                Otherwise, please upload a new file and re-run the evaluation. <br><br>
-                <span style="color:red">
-                NOTE: Before you upload a new file, please make sure to refresh the page to clear the data from the previous run.
-                </span>
-                <br><br>
+                <br> If you would like to proceed with the corrected data, please click the button below.
+                Otherwise, please upload a new file and re-run the evaluation by clicking on 'Check Data' again. <br><br>
                 <button ng-click="retrieveResultsButton(selectedOption, selectedSwitch)" class="get-results">Get Results</button>
+                <div ng-show="isLoadingResults" class="loading-container active"></div>
+                <div ng-show="showResultsButton">
+                <span style="color:blue">
+                    NOTE: If you decide to upload a new file, please make sure to reload the page before uploading to clear the data from the previous run.
+                    </span> <br><br>
+                </div>
             </p>
 
             <p ng-show="selectedOption === 'get-models'">This interface currently supports obtaining 
@@ -354,7 +392,7 @@
                
 
                 <i>
-                    {{ resultsErrorMessage }}
+                    <div ng-style="resultsErrorMessageStyle">{{ resultsErrorMessage }}</div>
                 </i>
             </div>
 

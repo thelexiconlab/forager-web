@@ -100,6 +100,10 @@ def upload_file():
         if 'selected-sims' in request.form:
             simval = request.form['selected-sims']
             results = get_results(f, simval)
+        elif 'selected-process' in request.form:
+            process_val = request.form['selected-process']
+            print("process_val=", process_val)
+            results = get_results(f, process_val)
         elif 'selected-switch' in request.form:
             switch = request.form['selected-switch']
             results = get_results(f, switch)
@@ -122,14 +126,19 @@ def get_results(file, switch):
     # Prepare data and run model for selected features
     try:
         stored_data_lists = json.loads(session.get('data_lists', []))
-        print("stored_data_lists=", stored_data_lists)
+        
 
-        if switch != "sims":
+        if switch == "process":
+            print("inside the elif process statement")
+            oov_results = run_sims_oov(stored_data_lists)
+            results = {"oov_results" : oov_results}
+        elif switch != "sims":
             switch_results = run_switch(stored_data_lists, switch)
             results = {"switch_results" : switch_results}
-        else:
+        elif switch == "sims":
             sim_results = run_sims(stored_data_lists)
             results = {"sim_results" : sim_results}
+        
     except: 
         return None
 

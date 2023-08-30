@@ -10,13 +10,19 @@ import sys
 from scipy.optimize import fmin
 from forager.foraging import forage
 from forager.switch import switch_delta, switch_multimodal, switch_simdrop, switch_troyer
-from forager.cues import create_history_variables
+from forager.cues import create_history_variables, get_oov_sims
 from forager.utils import evaluate_web_data
 import pandas as pd
 import numpy as np
 from scipy.optimize import fmin
 import os
 from tqdm import tqdm
+
+import tensorflow as tf
+
+import tensorflow_hub as hub
+import re
+from alive_progress import alive_bar 
 
 """
 Workflow: 
@@ -40,7 +46,7 @@ Workflow:
 # Global Path Variabiles
 #normspath = 'data/norms/troyernorms.csv'
 normspath = 'data/norms/animals_snafu_scheme.csv'
-similaritypath = 'data/lexical_data/similaritymatrix.csv'
+similaritypath = 'data/lexical_data/USE_semantic_matrix.csv'
 frequencypath = 'data/lexical_data/frequencies.csv'
 phonpath = 'data/lexical_data/phonmatrix.csv'
 
@@ -95,7 +101,7 @@ def get_evaluation_message(file, oov_choice='exclude'):
 
 def get_lexical_data():
     norms = pd.read_csv(normspath, encoding="unicode-escape")
-    similarity_matrix = np.loadtxt(similaritypath, delimiter=' ')
+    similarity_matrix = np.loadtxt(similaritypath, delimiter=',')
     frequency_list = np.array(pd.read_csv(
         frequencypath, header=None, encoding="unicode-escape")[1])
     phon_matrix = np.loadtxt(phonpath, delimiter=',')
@@ -299,6 +305,31 @@ def run_all(data, model, switch):
 
     return synthesize_all_results(outputs)
 
+def run_sims_oov(data):
+
+    """
+    Perform only switch computations.   
+    Outputs a dataframe for switch results. 
+    """
+    print("Running oov sims")
+    print(data)
+    
+    # Get Lexical Data needed for executing methods
+    norms, similarity_matrix, phon_matrix, frequency_list, labels = get_lexical_data()
+    outputs = []
+
+    # Run through each fluency list in dataset
+    for i, (subj, fl_list) in enumerate(tqdm(data)):
+        print(fl_list)
+        # Get History Variables
+        history_vars = get_oov_sims(
+            fl_list, labels, similarity_matrix, frequency_list, phon_matrix)
+        
+        outputs.append([subj, fl_list, history_vars])
+
+    return synthesize_sim_results(outputs)
+
+
 def run_sims(data):
 
     """
@@ -338,10 +369,12 @@ def run_switch(data, switch):
         # Get History Variables
         history_vars = create_history_variables(
             fl_list, labels, similarity_matrix, frequency_list, phon_matrix)
+        
+        # history vars returns sim_list, freq_list, phon_list,sim_history, freq_history, phon_history
 
         # Calculate Switch Vector(s)
         switch_names, switch_vecs = calculate_switch(
-            switch, fl_list, history_vars[0],   history_vars[4], norms)
+            switch, fl_list, history_vars[0],   history_vars[2], norms)
 
         outputs.append([subj, fl_list, switch_names, switch_vecs, history_vars])
 
@@ -397,8 +430,8 @@ def synthesize_sim_results(outputs):
         df['Fluency_Item'] = fl_list
         # # add lexical metrics to switch results
         df['Semantic_Similarity'] = output[2][0]
-        df['Frequency_Value'] = output[2][2]
-        df['Phonological_Similarity'] = output[2][4]
+        df['Frequency_Value'] = output[2][1]
+        df['Phonological_Similarity'] = output[2][2]
 
         sim_results.append(df)
 
@@ -424,6 +457,9 @@ def synthesize_switch_results(outputs):
         switch_methods = output[2]
         switch_vectors = output[3]
 
+        # history vars returns sim_list, freq_list, phon_list,sim_history, freq_history, phon_history
+        # it is contained in output[4]
+
         # Create  Switch Results DataFrame
         switch_df = []
         for j, switch in enumerate(switch_vectors):
@@ -434,8 +470,8 @@ def synthesize_switch_results(outputs):
             df['Switch_Method'] = switch_methods[j]
             # # add lexical metrics to switch results
             df['Semantic_Similarity'] = output[4][0]
-            df['Frequency_Value'] = output[4][2]
-            df['Phonological_Similarity'] = output[4][4]
+            df['Frequency_Value'] = output[4][1]
+            df['Phonological_Similarity'] = output[4][2]
             switch_df.append(df)
         
         switch_df = pd.concat(switch_df, ignore_index=True)

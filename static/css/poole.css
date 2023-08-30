@@ -205,6 +205,48 @@ select#select-switch-dropdown {
   background-color: #9034db;
 }
 
+@keyframes rotate-hourglass {
+  0% {
+      transform: rotate(0deg);
+  }
+  100% {
+      transform: rotate(360deg);
+  }
+}
+
+.loading-container {
+  display: none;
+  animation: rotate-hourglass 2s linear infinite;
+  position: relative;
+  width: 40px;
+  height: 60px;
+  /* Add other styling for the container, such as size and position */
+}
+
+.loading-container.active {
+  display: block; /* Show the container when active */
+}
+
+
+.loading-container::before,
+.loading-container::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 20px solid transparent;
+  border-bottom: 30px solid #ff0095; /* Change the color as needed */
+}
+
+.loading-container::before {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  border-bottom: 30px solid transparent;
+  border-top: 30px solid #ff0095; /* Change the color as needed */
+}
+
+
 .custom-file-input-label {
   display: inline-block;
   padding: 10px 20px;
