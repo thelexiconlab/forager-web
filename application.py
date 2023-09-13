@@ -19,7 +19,7 @@ application.config['SECRET_KEY'] = 'XYZ'
 # set a global variable for the data_lists that will be used to store the data
 # this will be updated once evaluate-data is called
 
-data_lists = None
+
 
 # Change variable notation for angularJS compatibility
 jinja_options = application.jinja_options.copy()
@@ -44,29 +44,34 @@ def index():
 
 @application.route('/evaluate-data', methods=['POST'])
 def get_data_evaluation():
+    global data_lists_global  # Declare data_lists as global variable
+    
     evaluation_message = "No file uploaded."
     data_results = None
+    global evaluation_compiled_data # Declare evaluation_compiled_data as global variable, so we can combine outputs later
     f = request.files['filename']
     if f: 
         user_oov_choice = request.form['selected-oov']
-        evaluation_message, replacement_df, data_df, data_lists = get_evaluation_message(f, user_oov_choice)
-        data_results = get_data_results(evaluation_message, replacement_df, data_df)
+        evaluation_message, replacement_df, data_df, data_lists_local = get_evaluation_message(f, user_oov_choice)
+        forager_vocab = pd.read_csv("data/lexical_data/vocab.csv")
+        evaluation_compiled_data = [replacement_df, data_df, forager_vocab]
+        data_results = get_data_results(evaluation_message, replacement_df, data_df, forager_vocab)
     else:
         abort(400)
     
     if data_results is None:
         abort(400)
     else:
-        data_lists = [(str(idx), words) for idx, words in data_lists]
-        session['data_lists'] = json.dumps(data_lists)
+        data_lists_global = [(str(idx), words) for idx, words in data_lists_local]
         return data_results
 
-def get_data_results(eval_msg, replacement_df, data_df):
+def get_data_results(eval_msg, replacement_df, data_df, vocab):
 
     # Prepare data and run model for selected features
     
-    results = {"evaluation_df": replacement_df,
-                "data_df": data_df}
+    results = {"evaluation_results": replacement_df,
+                "processed_data": data_df,
+                "forager_vocab": vocab}
     
     # Create a BytesIO buffer to store the zip file content
     zip_stream = BytesIO()
@@ -102,10 +107,10 @@ def upload_file():
             results = get_results(f, simval)
         elif 'selected-process' in request.form:
             process_val = request.form['selected-process']
-            print("process_val=", process_val)
             results = get_results(f, process_val)
         elif 'selected-switch' in request.form:
             switch = request.form['selected-switch']
+            print("switch is " + switch)
             results = get_results(f, switch)
         else:
             abort(400)
@@ -125,38 +130,43 @@ def get_results(file, switch):
 
     # Prepare data and run model for selected features
     try:
-        stored_data_lists = json.loads(session.get('data_lists', []))
-        
-
         if switch == "process":
-            print("inside the elif process statement")
-            oov_results = run_sims_oov(stored_data_lists)
+            oov_results = run_sims_oov(data_lists_global)
             results = {"oov_results" : oov_results}
         elif switch != "sims":
-            switch_results = run_switch(stored_data_lists, switch)
-            results = {"switch_results" : switch_results}
+            switch_results, lexical_results = run_switch(data_lists_global, switch)
+            print("length of switch results is " + str(len(switch_results)))
+            print("length of lexical results is " + str(len(lexical_results)))
+            results = {"switch_results" : switch_results,
+                        "lexical_results" : lexical_results,
+                       "evaluation_results": evaluation_compiled_data[0],
+                       "processed_data": evaluation_compiled_data[1],
+                       "forager_vocab": evaluation_compiled_data[2]}
         elif switch == "sims":
-            sim_results = run_sims(stored_data_lists)
-            results = {"sim_results" : sim_results}
+            sim_results = run_sims(data_lists_global)
+            results = {"lexical_results" : sim_results,
+                       "evaluation_results": evaluation_compiled_data[0],
+                       "processed_data": evaluation_compiled_data[1],
+                       "forager_vocab": evaluation_compiled_data[2]}
         
     except: 
         return None
 
     # Compress results into zip file
-    filename_head = file.filename.split(".")[0] + '_forager'
-    #filename_head = file.filename.split(".")[0] + '_model_' + model + '_switch_' + switch
+    filename_head = file.filename.split(".")[0]
+    
     zip_stream = BytesIO()
     with ZipFile(zip_stream, 'w') as zf:
         # Write each result as a csv file
         for name, result in results.items(): 
-            filename = filename_head + "_" + name + ".csv"
+            filename = name + ".csv"
             zf.writestr(filename, result.to_csv())
     zip_stream.seek(0)
 
     return send_file(
         zip_stream,
         as_attachment = True,
-        download_name= filename_head + '_results.zip'
+        download_name= filename_head + '_forager.zip'
     )
 
 # About Page

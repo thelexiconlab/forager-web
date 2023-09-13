@@ -22,13 +22,25 @@ def exclude(word,df):
     return None
 
 # Modified web version of prepareData which returns list of replacements and truncations that would be made using default policy.
-def evaluate_web_data(file, delimiter = '\t', oov_choice = 'exclude'):
+def evaluate_web_data(file, oov_choice = 'exclude'):
+    
    
     ### LOAD BEHAVIORAL DATA ###
-    df = pd.read_csv(file, header=None, names=['SID', 'entry'], delimiter=delimiter)
+    df = pd.read_csv(file, header=0, engine='python', sep=None, encoding='utf-8-sig')
+
+    
+
+    ## treat third column as time point automatically
+
+    if len(df.columns) > 2:
+        df = df.iloc[:, :4]
+        df.columns = ['SID', 'entry', 'timepoint']
+    else:
+        df.columns = ['SID', 'entry']
+
     replacement_df = df.copy()
     # load labels
-    labels = pd.read_csv("data/lexical_data/frequencies.csv", names=['word', 'logct', 'ct']) 
+    labels = pd.read_csv("data/lexical_data/USE_frequencies.csv", names=['word', 'logct', 'ct']) 
 
     # set all replacements to actual word for all words in labels as the default
     replacements = {word: word for word in labels['word'].values}
@@ -40,6 +52,7 @@ def evaluate_web_data(file, delimiter = '\t', oov_choice = 'exclude'):
     oov = [w for w in values if w not in labels['word'].values]
     
     if len(oov) > 0:
+        
         for word in set(oov):
                 # get closest match in vocab and check edit distance
                 closest_word = difflib.get_close_matches(word, labels['word'].values,1)
@@ -53,32 +66,44 @@ def evaluate_web_data(file, delimiter = '\t', oov_choice = 'exclude'):
                 elif oov_choice == "random":
                     # change all occurrences of word to "UNK"
                     replacements[word] = "UNK"
-                elif oov_choice == "process":
-                    # if they want to create embeddings on the fly, do that here
-                    replacements[word] = word
+                # elif oov_choice == "process":
+                #     # if they want to create embeddings on the fly, do that here
+                #     replacements[word] = word
                 else: 
                     # truncate fluency list before instance of OOV item
                     while word in df.values:
                         trunc(word, df)
                     replacements[word] = "TRUNCATE"
-                df.replace(replacements, inplace=True)
+        df.replace(replacements, inplace=True)
+        # add an extra column to orig_df with the replacement word
 
-    # add an extra column to orig_df with the replacement word
+        replacement_df['evaluation'] = replacement_df['entry'].map(replacements)
+        # create a new column 'replacement' that is a copy of 'evaluation'
+        replacement_df['replacement'] = replacement_df['evaluation']
+        # now replace all instances in evalution where the entry doesn't match the replacement AND isn't within
+        # ['UNK', 'EXCLUDE', 'TRUNCATE'] with 'REPLACE'
+        replacement_df.loc[(replacement_df['entry'] != replacement_df['evaluation']) & (~replacement_df['evaluation'].isin(['UNK', 'EXCLUDE', 'TRUNCATE'])), 'evaluation'] = 'REPLACE'
+        # also for the column 'evaluation', if entry matches evaluation, replace with 'found'
+        replacement_df.loc[(replacement_df['entry'] == replacement_df['evaluation']), 'evaluation'] = 'FOUND'
 
-    replacement_df['evaluation'] = replacement_df['entry'].map(replacements)
-    # create a new column 'replacement' that is a copy of 'evaluation'
-    replacement_df['replacement'] = replacement_df['evaluation']
-    # now replace all instances in evalution where the entry doesn't match the replacement AND isn't within
-    # ['UNK', 'EXCLUDE', 'TRUNCATE'] with 'REPLACE'
-    replacement_df.loc[(replacement_df['entry'] != replacement_df['evaluation']) & (~replacement_df['evaluation'].isin(['UNK', 'EXCLUDE', 'TRUNCATE'])), 'evaluation'] = 'REPLACE'
-    # also for the column 'evaluation', if entry matches evaluation, replace with 'found'
-    replacement_df.loc[(replacement_df['entry'] == replacement_df['evaluation']), 'evaluation'] = 'FOUND'
+    else:
+        
+        replacement_df = df.copy()
+        replacement_df['evaluation'] = "FOUND"
 
     # Stratify data into fluency lists
+
     data = []
-    for subj in df['SID'].unique():
-        subj_df = df[df['SID'] == subj]
-        subj_data = (subj,subj_df['entry'].values.tolist())
-        data.append(subj_data)
+    if 'timepoint' in df.columns:
+        lists = df.groupby(["SID", "timepoint"])
+    else: 
+        lists = df.groupby("SID")
     
+    for sub, frame in lists:
+        list = frame["entry"].values.tolist()
+        subj_data = (sub, list)
+        data.append(subj_data)
+        
     return df, replacement_df, data
+
+    

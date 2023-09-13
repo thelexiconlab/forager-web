@@ -52,6 +52,7 @@
             $scope.evaluationSuccess = false;
             $scope.inProgress = false;
             $scope.isLoadingResults = false;
+            $scope.isLoadingEvaluation = false;
 
             
 
@@ -63,6 +64,15 @@
             $scope.showResultsButton = false; // Initialize the flag for showing the "Get Results" button
 
             $scope.OOVchoice = ''; // Initialize the selected OOV choice
+
+            $scope.showPopup = function() {
+                var confirmed = window.confirm("This option will allow you to implement computational search models on your VFT data. You will be redirected to a Google Colab notebook for the same, where you will upload data and select which models you want to examine. Do you want to go to the Colab notebook?");
+                if (confirmed) {
+                    // Open the link in a new tab
+                    window.open('https://thelexiconlab.github.io/', '_blank'); // Replace with your actual external link
+                }
+            };
+
 
             $scope.selectOption = function(option) {
                 $scope.selectedOption = option;
@@ -90,16 +100,20 @@
             
             // Evaluate data on button press
             $scope.evaluateDataButton = function (oov_choice) {
+                $scope.isLoadingEvaluation = true;
                 $scope.OOVchoice = oov_choice;
                 if (typeof $scope.userFile === "undefined") {
                     $scope.evalErrorMessage = "Please select a file.";
                     $scope.evaluationSuccess = false;
+                    //$scope.isLoadingEvaluation = false;
                 }
                 else {
                     $scope.evalErrorMessage = "";
+                    var file = $scope.userFile;
+                    $scope.zipFolderName = [file.name.split('.')[0], 'forager'].join('_');
                     var response = $scope.retrieveDataEvaluation($scope.userFile, oov_choice);
                     $scope.evaluationSuccess = true;
-                    $scope.showResultsButton = true;
+                    //$scope.isLoadingEvaluation = false;
                 }
             }
 
@@ -138,6 +152,8 @@
                     $scope.zipFolderName = [file.name.split('.')[0], 'forager'].join('_');
 
                     // make HTTP Request
+
+                    console.log("selectedSwitch: " + selectedSwitch)
 
                     $scope.retrieveResults(file, $scope.selectedOption, $scope.selectedSwitch);
 
@@ -183,11 +199,12 @@
                     // Update the message to display
                     $scope.evaluationMessage = responseData.message;
                     
-                    
+                    $scope.showResultsButton = true;
                     $scope.evaluationSuccess = true;
 
                     // Show the download button
                     $scope.showDownloadButton = true;
+                    $scope.isLoadingEvaluation = false;
 
 
                     $scope.zipContent = responseData.zipContent;
@@ -215,7 +232,7 @@
                 // Create a temporary anchor element
                 var anchor = document.createElement('a');
                 anchor.href = downloadUrl;
-                anchor.download = 'evaluation_results.zip';
+                anchor.download = $scope.zipFolderName;
 
                 // Trigger the click event on the anchor element
                 anchor.click();
@@ -309,17 +326,17 @@
                 <p> Hover over the buttons to learn more about each option.</p>
 
                 <div class="button-container">
-                    <button id="get-sims" ng-click="selectOption('get-sims')" class="tooltip">
+                    <button id="get-sims" ng-click="selectOption('get-sims')" class="tooltip" ng-style="{'border': (selectedOption === 'get-sims') ? '2px solid black' : 'none', 'font-weight': (selectedOption === 'get-sims') ? 'bold' : 'normal'}">
                         Get Lexical Values
                         <span class="tooltiptext">This option will provide estimates of consecutive semantic and phonological similarity for fluency items, as well as word frequency estimates for the items in your data.</span>
                     </button>
-                    <button id="get-switch" ng-click="selectOption('get-switch'); showDropdown = !showDropdown" class="tooltip">
+                    <button id="get-switch" ng-click="selectOption('get-switch'); showDropdown = !showDropdown" class="tooltip" ng-style="{'border': (selectedOption === 'get-switch') ? '2px solid black' : 'none', 'font-weight': (selectedOption === 'get-switch') ? 'bold' : 'normal'}">
                         Get Cluster-Switch Values
                         <span class="tooltiptext">This option will provide cluster-switch designations for each transition in your fluency data, based on the method you select. A drop down will appear once you click this option to select one of the methods or all of them. Selecting this option will also automatically provide lexical similarity values, in addition to cluster-switch designations.</span>
                     </button>
-                    <button id="get-models" ng-click="selectOption('get-models')" class="tooltip">
+                    <button id="get-models" ng-click="showPopup()" class="tooltip"  ng-style="{'border': (selectedOption === 'get-models') ? '2px solid black' : 'none', 'font-weight': (selectedOption === 'get-models') ? 'bold' : 'normal'}">
                         Run Search Models
-                        <span class="tooltiptext">This option will allow you to implement computational search models on your VFT data. You will be redirected to a Google Colab notebook for the same, where you will upload data and select which models you want to examine.</span>
+                        <span class="tooltiptext">This option will allow you to implement computational search models on your VFT data. You will be redirected to a Google Colab notebook for the same, where you will upload data and select which models you want to examine. Please make sure pop-ups are allowed for this page.</span>
                     </button>
                 </div>
 
@@ -327,7 +344,8 @@
                     <!-- Dropdown content here -->
                     <select ng-model="selectedSwitch" id = "select-switch-dropdown">
                         <option value="">Select a scoring method</option>
-                        <option value="troyer">Troyer norm-based</option>
+                        <option value="norms_associative">Norm-based associative</option>
+                        <option value="norms_categorical">Norm-based categorical</option>
                         <option value="simdrop">Similarity-drop</option>
                         <option value="delta">Delta Similarity</option>
                         <option value="multimodal">Multimodal Similarity-drop</option>
@@ -340,7 +358,10 @@
             <div ng-show="(selectedOption === 'get-sims') || (selectedOption === 'get-switch' && selectedSwitch !== '')">
                 
                 <h3>Upload your data</h3>
-                <p>Upload data as a tab-delimited .txt file, with columns for subject ID and words:</p>
+                <p>Upload data as a tab-delimited .txt or CSV file, with column headers for subject ID and words. <br> <br>
+                    <b>Please note</b>: If your data has 3 columns, forager will automatically treat the third column as a timepoint.
+                    If you do not want this, please remove the third column before uploading.
+                </p>
             
                 <label class="custom-file-input-label">
                     <input type="file" file-model="userFile" accept=".txt, .csv" id="upload-file" />
@@ -356,17 +377,19 @@
                     </select>
                     <!-- Pass the selected choice to the evaluateDataButton function -->
                     <button id="eval-data-button" ng-click="evaluateDataButton(userChoice)" ng-show="userFile && userChoice">Check Data</button>
+                    <div ng-show="isLoadingEvaluation" class="loading-container active"></div>
                 </p>
             </div>
 
             <p ng-if="evaluationSuccess">Evaluation results:</p>
+    
             <p>
                 <i>{{ evalErrorMessage }}</i>
             <pre>{{ evaluationMessage }}</pre>
             </p>
 
             <p>{{ downloadMessage }}</p>
-            <button ng-show="showDownloadButton" ng-click="downloadZipFile()">Download Corrected Data Files</button>
+            <button ng-show="showDownloadButton" ng-click="downloadZipFile()">Download Evaluation Results</button>
 
             
             <!-- Show "Get Results" button after checking data -->
@@ -404,12 +427,8 @@
             <h2 id="refs">citation</h2>
         <p>
      
-         Users are encouraged to cite the following work when using <i>forager</i>:
-         <ol>
-      <li>Kumar, A.A., Apsel, M., Zhang, L., Xing, N., Jones. M.N. (2023). forager: A Python package and web interface for modeling mental search.</li>
-      <li>Kumar, A.A., Lundin, N. B., Jones, M.N. (2022). Mouse-mole-vole: The inconspicuous benefits of phonology during retrieval from semantic memory. In <i>Proceedings of the 44th Annual Meeting of the Cognitive Science Society</i>.</li>
-      <li>Hills, T. T., Jones, M. N., & Todd, P. M. (2012). Optimal foraging in semantic memory. <i>Psychological Review</i>, <i>119</i>(2), 431.</li>
-     
+         If you use <i>forager</i>, please use the guidelines on the <a href="cite">cite</a> page to cite our work!
+         
          </ol>
         </p>
 

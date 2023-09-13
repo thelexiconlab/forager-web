@@ -10,7 +10,7 @@
 <p>This page contains more information about the key components of <i>forager:</i> <a href="#data">data</a>, the <a href="#oov">default policy for handling out-of-vocabulary words</a>, <a href="#switch">switch methods</a>, <a href="#models">models</a>, and <a href=#out>outputs</a>. </p>
 </div>
 <h2 id="data"> data </h2>
-<p>To use forager on one’s own data, the user needs to upload a <b>single text file of fluency lists</b>  with two columns: 
+<p>To use forager on one’s own data, the user needs to upload a <b>single text/CSV file of fluency lists</b>  with two columns (with headers): 
 one for the participant identifier and one for the item they produced. For example, if participant 1 had 
 30 response items, there would be 30 rows with “1” in the first column, one for each item in their fluency list.
 The rows should be separated by a newline, and the columns should be separated by the same delimiter throughout 
@@ -92,12 +92,6 @@ which are then processed further to compute clusters/switches and derive model e
    <h2 id="refs">citation</h2>
    <p>
 
-    Users are encouraged to cite the following references when using <i>forager</i>:
-    <ol>
- <li>Kumar, A.A., Apsel, M., Zhang, L., Xing, N., Jones. M.N. (2023). forager: A Python package and web interface for modeling mental search</li>
- <li>Kumar, A.A., Lundin, N. B., Jones, M.N. (2022). Mouse-mole-vole: The inconspicuous benefits of phonology during retrieval from semantic memory. In <i>Proceedings of the 44th Annual Meeting of the Cognitive Science Society</i>.</li>
- <li>Hills, T. T., Jones, M. N., & Todd, P. M. (2012). Optimal foraging in semantic memory. <i>Psychological Review</i>, <i>119</i>(2), 431.</li>
-
-    </ol>
+    If you use <i>forager</i>, please use the guidelines on the <a href="cite">cite</a> page to cite our work!
    </p>
 <% endblock %>

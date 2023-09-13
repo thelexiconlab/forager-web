@@ -236,6 +236,7 @@ select#select-switch-dropdown {
   height: 0;
   border: 20px solid transparent;
   border-bottom: 30px solid #ff0095; /* Change the color as needed */
+  border-radius: 20px;
 }
 
 .loading-container::before {
@@ -244,6 +245,7 @@ select#select-switch-dropdown {
   transform: translateX(-50%);
   border-bottom: 30px solid transparent;
   border-top: 30px solid #ff0095; /* Change the color as needed */
+  border-radius: 20px;
 }
 
 

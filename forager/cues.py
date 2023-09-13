@@ -87,7 +87,7 @@ def create_history_variables(fluency_list, labels, sim_matrix, freq_matrix, phon
                 phon_list.append(0.0001)
                 phon_history.append(phon_matrix[currentwordindex,:])
 
-    return sim_list, freq_list, phon_list,sim_history, freq_history, phon_history
+    return sim_list, sim_history, freq_list, freq_history,phon_list, phon_history
 
 def get_oov_sims(fluency_list, labels, sim_matrix, freq_matrix, phon_matrix = None):
     """
@@ -97,7 +97,7 @@ def get_oov_sims(fluency_list, labels, sim_matrix, freq_matrix, phon_matrix = No
     phon_list = []
     freq_list = []
 
-    print("inside get_oov_sims")
+    
 
     module_url = "https://tfhub.dev/google/universal-sentence-encoder/4"
     model = hub.load(module_url)
