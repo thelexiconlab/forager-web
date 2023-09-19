@@ -5,7 +5,6 @@
         "tags": {
             "CostCenter": "429353",
             "compliance": "none",
-            "environment": "prod",
             "createdby": "houser@bowdoin.edu",
             "classification" : "Public",
             "managedby" : "houser@bowdoin.edu",
@@ -22,11 +21,13 @@
 
         "dev": {
             "name": "forager-web-dev",
-            "description": "Forager Application Development"
+            "description": "Forager Application Development",
+            "environment": "dev"
         },
         "prod": {
             "name": "forager-web",
-            "description": "Forager Application Production"
+            "description": "Forager Application Production",
+            "environment": "prod"
         }
     }
 }

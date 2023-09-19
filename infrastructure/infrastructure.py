@@ -26,8 +26,8 @@ class SimpleDBStack(Stack):
             instance_type = None,       ## ec2.InstanceType
             github_connection_arn = None,
             github_repo = None,
-            github_branch = None,   
-            vpc_name = None,      
+            github_branch = None,
+            vpc_name = None,
             **kwargs) -> None:
         super().__init__(app, id, **kwargs)
 
@@ -90,11 +90,11 @@ app = App()
 
 # Bowdoin Cloud Tags
 # https://bowdoin.atlassian.net/wiki/spaces/ITKB/pages/2164589/Cloud+Tagging+Standards
-# Tags.of(app).add('environment', get_context('deploymentType'))
-# for tag, value in get_context('tags').items():
-#     Tags.of(app).add(tag, value)
+Tags.of(app).add('environment', get_context('deploymentType'))
+for tag, value in get_context('tags').items():
+    Tags.of(app).add(tag, value)
 
-Tags.of(app).add('project', get_context('project'))
+#Tags.of(app).add('project', get_context('project'))
 
 SimpleDBStack(app, get_context('name'),
     env={ "region": get_context('region'), "account": get_context('account') }, 

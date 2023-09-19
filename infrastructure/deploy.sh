@@ -13,11 +13,11 @@ fi
 
 (cd .. & pipenv install -d)
 
-pipenv run cdk --profile faculty --context deploymentType=${type} deploy
+pipenv run cdk --context deploymentType=${type} deploy
 
 echo "Infrastructure deployed!"
 echo "To delete:"
-echo "    pipenv run cdk --profile faculty destroy"
+echo "    pipenv run cdk destroy"
 echo ""
 echo "To show CDK generated code"
-echo "	  pipenv run cdk --profile faculty synth > cdk.yaml"
+echo "	  pipenv run cdk synth > cdk.yaml"
