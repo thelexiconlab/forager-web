@@ -135,16 +135,21 @@ def get_results(file, switch):
             results = {"oov_results" : oov_results}
         elif switch != "sims":
             switch_results, lexical_results = run_switch(data_lists_global, switch)
-            print("length of switch results is " + str(len(switch_results)))
-            print("length of lexical results is " + str(len(lexical_results)))
+            ind_stats = indiv_desc_stats(lexical_results, switch_results)
+            agg_stats = agg_desc_stats(switch_results)
+            
             results = {"switch_results" : switch_results,
                         "lexical_results" : lexical_results,
+                        "individual_descriptive_stats.csv" : ind_stats,
+                        "aggregate_descriptive_stats.csv" : agg_stats,
                        "evaluation_results": evaluation_compiled_data[0],
                        "processed_data": evaluation_compiled_data[1],
                        "forager_vocab": evaluation_compiled_data[2]}
         elif switch == "sims":
             sim_results = run_sims(data_lists_global)
+            ind_stats = indiv_desc_stats(sim_results)
             results = {"lexical_results" : sim_results,
+                        "individual_descriptive_stats.csv" : ind_stats,
                        "evaluation_results": evaluation_compiled_data[0],
                        "processed_data": evaluation_compiled_data[1],
                        "forager_vocab": evaluation_compiled_data[2]}

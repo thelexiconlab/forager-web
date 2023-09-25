@@ -307,3 +307,96 @@ def synthesize_switch_results(outputs):
     switch_results = pd.concat(switch_results, ignore_index=True)
 
     return switch_results
+
+def indiv_desc_stats(lexical_results, switch_results = None):
+    metrics = lexical_results[['Subject', 'Semantic_Similarity', 'Frequency_Value', 'Phonological_Similarity']]
+    metrics.replace(.0001, np.nan, inplace=True)
+    grouped = metrics.groupby('Subject').agg(['mean', 'std'])
+    grouped.columns = ['{}_{}'.format(col[0], col[1]) for col in grouped.columns]
+    grouped.reset_index(inplace=True)
+    num_items = lexical_results.groupby('Subject')['Fluency_Item'].size()
+    grouped['#_of_Items'] = num_items[grouped['Subject']].values
+    # create column for each switch method per subject and get number of switches, mean cluster size, and sd of cluster size for each switch method
+    if switch_results is not None:
+        # count the number of unique values in the Switch_Method column of the switch_results DataFrame
+        n_rows = len(switch_results['Switch_Method'].unique())
+        new_df = pd.DataFrame(np.nan, index=np.arange(len(grouped) * (n_rows)), columns=grouped.columns)
+
+        # Insert the original DataFrame into the new DataFrame but repeat the value in 'Subject' column n_rows-1 times
+
+        new_df.iloc[(slice(None, None, n_rows)), :] = grouped
+        new_df['Subject'] = new_df['Subject'].ffill()
+
+        switch_methods = []
+        num_switches_arr = []
+        cluster_size_mean = []
+        cluster_size_sd = []
+        for sub, fl_list in switch_results.groupby(["Subject", "Switch_Method"]):
+            switch_method = sub[1]
+            cluster_lengths = []
+            num_switches = 0
+            ct = 0
+            for x in fl_list['Switch_Value'].values:
+                ct += 1
+                if x == 1:
+                    num_switches += 1
+                    cluster_lengths.append(ct)
+                    ct = 0
+            if ct != 0:
+                cluster_lengths.append(ct)
+            avg = sum(cluster_lengths) / len(cluster_lengths)
+            sd = np.std(cluster_lengths)
+            switch_methods.append(switch_method)
+            num_switches_arr.append(num_switches)
+            cluster_size_mean.append(avg)
+            cluster_size_sd.append(sd)
+
+        new_df['Switch_Method'] = switch_methods
+        new_df['Number_of_Switches'] = num_switches_arr
+        new_df['Cluster_Size_mean'] = cluster_size_mean
+        new_df['Cluster_Size_std'] = cluster_size_sd
+        grouped = new_df
+        
+    return grouped
+
+def agg_desc_stats(switch_results, model_results=None):
+    agg_df = pd.DataFrame()
+    # get number of switches per subject for each switch method
+    switches_per_method = {}
+    for sub, fl_list in switch_results.groupby(["Subject", "Switch_Method"]):
+        method = sub[1]
+        if method not in switches_per_method:
+            switches_per_method[method] = []
+        if 1 in fl_list['Switch_Value'].values:
+            switches_per_method[method].append(fl_list['Switch_Value'].value_counts()[1])
+        else: 
+            switches_per_method[method].append(0)
+    agg_df['Switch_Method'] = switches_per_method.keys()
+    agg_df['Switches_per_Subj_mean'] = [np.average(switches_per_method[k]) for k in switches_per_method.keys()]
+    agg_df['Switches_per_Subj_SD'] = [np.std(switches_per_method[k]) for k in switches_per_method.keys()]
+    
+    if model_results is not None:
+        betas = model_results.drop(columns=['Subject', 'Negative_Log_Likelihood_Optimized'])
+        betas.drop(betas[betas['Model'] == 'forage_random_baseline'].index, inplace=True)
+        grouped = betas.groupby('Model').agg(['mean', 'std'])
+        grouped.columns = ['{}_{}'.format(col[0], col[1]) for col in grouped.columns]
+        grouped.reset_index(inplace=True)
+
+        # add a column to the grouped dataframe that contains the switch method used for each model
+        grouped.loc[grouped['Model'].str.contains('static'), 'Model'] += ' none'
+        # if the model name starts with 'forage_dynamic_', ''forage_phonologicaldynamicglobal_', 'forage_phonologicaldynamiclocal_', or 'forage_phonologicaldynamicswitch_', replace the second underscore with a space
+        switch_models = ['forage_dynamic_', 'forage_phonologicaldynamicglobal_', 'forage_phonologicaldynamiclocal_', 'forage_phonologicaldynamicswitch_']
+        for model in switch_models:
+            # replace only the second underscore with a space
+            grouped.loc[grouped['Model'].str.contains(model), 'Model'] = grouped.loc[grouped['Model'].str.contains(model), 'Model'].str.replace('_', ' ', 2)
+            grouped.loc[grouped['Model'].str.contains("forage "), 'Model'] = grouped.loc[grouped['Model'].str.contains("forage "), 'Model'].str.replace(' ', '_', 1)
+        
+        # split the Model column on the space
+        grouped[['Model', 'Switch_Method']] = grouped['Model'].str.rsplit(' ', n=1, expand=True)
+
+        # merge the two dataframes on the Switch_Method column 
+        agg_df = pd.merge(agg_df, grouped, how='outer', on='Switch_Method')
+
+
+    return agg_df
+ 

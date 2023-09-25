@@ -10,54 +10,93 @@
 <p>This page contains more information about the key components of <i>forager:</i> <a href="#data">data</a>, the <a href="#oov">default policy for handling out-of-vocabulary words</a>, <a href="#switch">switch methods</a>, <a href="#models">models</a>, and <a href=#out>outputs</a>. </p>
 </div>
 <h2 id="data"> data </h2>
-<p>To use forager on one’s own data, the user needs to upload a <b>single text/CSV file of fluency lists</b>  with two columns (with headers): 
+<p>To use forager on one’s own data, the user needs to upload a <b>single text/CSV file of fluency lists</b>  with two columns <b>(with headers)</b>: 
 one for the participant identifier and one for the item they produced. For example, if participant 1 had 
 30 response items, there would be 30 rows with “1” in the first column, one for each item in their fluency list.
 The rows should be separated by a newline, and the columns should be separated by the same delimiter throughout 
-(such as a tab, space, comma). Most spreadsheet tools (e.g., Excel) can save files as a CSV, which can then be 
-converted to a text file. </p>
+(such as a tab, space, comma). Most spreadsheet tools (e.g., Excel) can save files as a CSV, which can also be 
+converted to a text file. Below is an example of a file that forager will be able to process:</p>
+
+<pre>
+  SID entry
+  1 bat
+  1 cat
+  1 horse
+  2 dog
+  2 hamster
+</pre>
+  
 
 <p><b>Please note:</b> The current version of forager already contains the necessary lexical data to process English-language VFT data 
 for the “animals” category and the web interface works for this category. However, those who wish to analyze data from a different category should use the Python package directly upload their own lexicon of 
 acceptable words and corresponding semantic embeddings for that category and derive the necessary frequency and similarity 
-data using the functions provided in the package. In the future, we hope to expand the functionality of 
-the package by providing predefined lexical data for multiple categories. </p>
+data using the functions provided in the package or via the Colab interface. </p>
+
+<p><b>Please note:</b> If your file has a third column, forager will automatically assume that it is a timepoint, and will treat
+  the data from a given participant separated by timepoints. For example, if the file has the following format: </p>
+
+  <pre>
+    SID entry time
+    1 bat 1
+    1 cat 1 
+    1 horse 2
+    2 dog 1
+    2 hamster 2
+  </pre>
+
+  In this case, forager will treat the data from participant 1 as two separate lists, one for timepoint 1 and one for timepoint 2. 
+  If you do not want this behavior, please remove the time column from your file before uploading it to forager.
 
 <h2 id="oov"> handling out-of-vocabulary (OOV) words </h2>
 
 <p>All search-related functions in forager rely on the lexical measures mentioned above. 
 Therefore, the items in the fluency lists must be in the stored lexicon (i.e., in the files containing the embeddings, 
-frequencies, and similarity matrices). An out-of-vocabulary (OOV) item can be replaced by a close match in the lexicon. 
-It can also be removed along with all subsequent items in that participant’s list. We do not allow the removal of only the 
-OOV item itself because the switch methods and models critically depend on the relationships between consecutive items to 
-evaluate semantic foraging behavior. </p>
+frequencies, and similarity matrices). An out-of-vocabulary (OOV) item is automatically replaced by a close match in the lexicon,
+if forager finds a reasonable replacement. forager classifies a replacement as <i>reasonable</i> if the Levenshtein edit distance 
+between the OOV item and its closest match in the lexicon is two or less (e.g., horses would be replaced by horse). 
+This policy allows correcting for minor variants, plurals, and spelling errors within the fluency lists.
 
-<p>After providing the file containing the fluency lists, the web interface of forager implements a default policy for OOV words.
-The default policy computes the Levenshtein edit distance between the OOV item and its closest match in the lexicon. 
-If the edit distance is two or less, the OOV item is replaced by the closest match (e.g., horses would be replaced by horse). 
-If the edit distance between the OOV item and the closest match found in the lexicon is more than two, the list is truncated after 
-the OOV item. This default policy allows correcting for minor variants, plurals, and spelling errors within the fluency lists, 
-but also mindfully truncates lists at junctures where no suitable replacement can be found. </p>
+<p>If the edit distance between the OOV item and the closest match found in the lexicon is more than two, then forager provides
+  three options to the user: exclude all occurrences of the OOV item, truncate the list(s) at the first occurrence of the OOV item,
+  or replace the OOV item with a random vector/label from the lexicon. This random vector (UNK) has a semantic vector that is 
+  the centroid of all other vectors in the lexicon and the phonological similarity of this label is the average phonological similarity
+  across all other items in the vocabulary. </p>
 
-<p>If a user wishes to review the OOV 
-items one by one instead of adopting the default policy, they are encouraged to use the Python package locally, where they will be 
-shown the OOV item and its top three closest matches in the lexicon. 
-The user can then choose to replace the item with one of the matches or truncate the list. This process is repeated for all OOV items. 
-The final result of the data preparation process is a data frame of fluency lists that contains only acceptable words, 
-which are then processed further to compute clusters/switches and derive model estimates.</p>
+<p>After providing the file containing the fluency lists and specifying an OOV policy, the web interface of forager runs through 
+  the data and provides the evaluation results in a <code>.zip</code> file, which contains three <code>.csv</code> files:
+
+  <ol>
+    <li><code>evaluation_results.csv</code>: This file contains the evaluation results for each fluency list, organized in the order 
+      of the fluency list. The first two columns contain the participant ID (SID) and item produced (entry). The third column (evaluation)
+      contains the evaluation results for each item, which can be one of the following: FOUND (if the item is in the lexicon), 
+      REPLACE (if a reasonable replacement was found), EXCLUDE (if the user chose to exclude the item), TRUNCATE (if the user chose to
+      truncate the list), or UNK (if the user chose to replace the item with the UNK vector). The fourth column (replacement) contains
+      the corresponding replacement. </li>
+      <li><code>processed_data.csv</code>: This file contains the final data that will be used by forager for further analyses. 
+        Users are encouraged to check this file to ensure that the data preparation process was successful. 
+      </li>
+      <li>
+        <code>forager_vocab.csv</code>: This file contains the vocabulary that was used by forager for the data preparation process. Users
+        are encouraged to use this file to make any adjustments to their data before proceeding with analyses. 
+      </li>
+  </ol>
+</p>
 
 <h2 id="switch">switch methods</h2>
 
 <p>forager provides four different methods for determining clusters and switches in a fluency list: 
   <ol>
-    <li><b>Troyer norms</b>, based on the hand-coded norms of animal subcategories created by Troyer et al. (1997; e.g., pets, aquatic animals, etc.) and subsequently extended by Lundin et al. (2022), </li> 
+    <li><b>Norm-based</b>, based on the hand-coded norms of animal subcategories created by Troyer et al. (1997; e.g., pets, aquatic animals, etc.) and subsequently extended by Lundin et al. (2022) and Zemla et al. (2020). There are two norm-based methods provided (based on Hills et al. 2015): </li> 
+      <ul>
+        <li>Norm-based associative search: This method assigns switches based on consecutive shifts from one category to another. </li>
+        <li>Norm-based categorical search: This method assigns switches based on overall shifts from one category to another </li>
+      </ul>
     <li><b>Similarity-drop</b>, based on the heuristic used by Hills et al. (2012), where a switch is predicted if there is a drop in semantic similarity between consecutive items followed by an immediate rise in semantic similarity</li>
     <li><b>Delta similarity</b>, based on Lundin et al. (2022), where switches and clusters depend on whether a rise or drop in semantic similarity exceeds specific thresholds, and </li>
     <li><b>Multimodal similarity drop</b>, where the similarity between consecutive items is a weighted sum of the semantic and phonological similarity, and switches correspond to drops in semantic-phonological similarity.</li>
-
   </ol>
 
-  The file <code>_switchresults.csv</code> will contain the item-level cluster/switch designations for each method. A switch is indicated by a 1, and a cluster is indicated by a 0. A value of 2 indicates that no designation was available for that item (e.g., the first item in a list). Rows with a value of 2 should be removed before any comparisons or analyses.
+  The file <code>switch_results.csv</code> will contain the item-level cluster/switch designations for each method. A switch is indicated by a 1, and a cluster is indicated by a 0. A value of 2 indicates that no designation was available for that item (e.g., the first item in a list). Rows with a value of 2 should be removed before any comparisons or analyses.
 
   <h2 id="models">models</h2>
 
@@ -68,6 +107,9 @@ which are then processed further to compute clusters/switches and derive model e
    comparison. Each model will calculate the overall negative log-likelihood (NLL) of the data, as well as participant- and 
    item-level NLLs. <b>Lower NLLs indicate a better fit and model. </b></p> 
 
+   <b>Note</b>: If users wish to run foraging models via the web interface, they are directed to a Colab notebook, where they can
+    upload their data and run the models. <br><br>
+
    <ol>
   <li><b>Static foraging model. </b>The static model (Hills et al., 2012) uses semantic similarity and word frequency to calculate the probability of retrieving an item without consideration of transitions between clusters. </li>
   <li><b>Dynamic foraging model.</b> The dynamic model (Hills et al., 2012) uses different cues to determine an item’s likelihood based on whether the item belongs to a cluster or signifies a switch event. For items within a cluster, the model is identical to the static model and uses semantic similarity and word frequency to make local transitions. When items are designated as switches, the likelihood is computed based on frequency alone. </li>
@@ -77,15 +119,57 @@ which are then processed further to compute clusters/switches and derive model e
    <h2 id="out">outputs</h2>
    <p>
 
-    Three output files are generated when forager is run. These contain:
-    <ol>
- <li><b>Item-wise lexical metrics</b> (semantic similarity, phonological similarity, and word frequency) as well as the item-wise NLLs for each chosen model and switch method (ends with <code>_nll_results.csv</code>). The semantic and phonological similarities indicate the similarity between the previous item and current item, whereas the frequency values indicate the frequency of the current item in the English language (obtained via Google N-grams). The item-wise NLLs indicate the likelihood of producing the current item under a given switch method and model. Overall, lower NLLs indicate a better fit and model. </li>
- <li><b>The switch designations</b> for each item for each selected switch method (ends with <code>_switch_results.csv</code>), where a switch is indicated by a 1 and 0s indicate items belonging to the same cluster. </li>
- <li><b>The model results</b> with the optimal parameter values and NLL for each model and switch method run at the subject level (ends with <code>_model_results.csv</code>). As before, lower NLLs indicate a better model fit. The <code>Beta_</code> columns contain the best-fitting parameter values for the semantic, phonology, and frequency sources for a given model. If a given model only uses one or two of the three lexical sources, then the other <code>Beta_</code> columns will be empty. </li>
+    Different output files are generated when forager is run, based on the use case:
 
+    <ol>
+ <li><b>Get Lexical Values</b>: If the user selects this option, the following files will be available for download via a <code>.zip</code> file: 
+
+  <ul>
+    <li> <code>lexical_results.csv</code>: This file contains item-wise lexical metrics (semantic similarity, 
+    phonological similarity, and word frequency). The semantic and phonological similarities indicate the similarity between 
+    the previous item and current item, whereas the frequency values indicate the frequency of the current item in the English language 
+    (obtained via Google N-grams). </li>
+    <li><code>individual_descriptive_stats.csv</code>: This file contains some aggregate metrics at the participant level 
+      such as total number of items produced, as well as mean semantic similarity, phonological similarity, and word frequency.
+    </li>
+    <li>The three files from the evaluation phase (see <a href="#oov">handling OOV words</a> for details). </li>
+  </ul>
+</li>
+
+<li><b>Get Switches</b>: If the user selects this option, the following files will be available for download via a <code>.zip</code> file: 
+
+  <ul>
+    <li> <code>switch_results.csv</code>: This file contains the item-level cluster/switch designations for each method. 
+      A switch is indicated by a 1, and a cluster is indicated by a 0. A value of 2 indicates that no designation was available for that item (e.g., the first item in a list). 
+      Rows with a value of 2 should be removed before any comparisons or analyses. </li>
+      <li> <code>lexical_results.csv</code>: This file will be identical to the one generated in the <b>Get Lexical Values</b> option. </li>
+    <li><code>individual_descriptive_stats.csv</code>: In addition to the metrics available from lexical results 
+      (mean lexical values and number of items), this file will also contain the total number of switches and mean cluster size 
+    for each switch method </li>
+    <li><code>aggregate_descriptive_stats.csv</code>: This file will contain mean/SD for the number of switches (aggregated across all 
+    participants) for each switch method.</li>
+    <li>The three files from the evaluation phase (see <a href="#oov">handling OOV words</a> for details). </li>
+  </ul>
+</li>
+
+<li><b>Get Models</b>: If the user selects this option, they will be redirected to a Colab notebook, 
+  where they can upload their data and run the models. In addition to the files generated in the <b>Get Switches</b> option,
+  the following files will be available for download via a <code>.zip</code> file:
+  <ul>
+    <li><code>model_results.csv</code>: This file will contain the model-based negative log-likelihoods for the selected models 
+      (see <a href="#models">models</a> for details), as well as the best-fitting parameters for 
+      semantic, phonological, and frequency cues for each model, at the subject level. </li>
+      <li><code>aggregate_descriptive_stats.csv</code>: In addition to the metrics available from the <b>Get Switches</b> option, 
+        this file will also contain the mean values of the parameters (aggregated across all participants) for each model
+        and switch method. </li>
+      </li>
+    
+  </ul>
+ 
     </ol>
 
     Possible analyses with forager include finding the best-fitting model for a set of fluency lists, evaluating the performance of a specific model, obtaining metrics of semantic and/or phonological similarity as well as different cluster/switch designations, and comparing the model performance for different groups. 
+    Users are encouraged to read the paper for demonstrations of these analyses.
    </p>
 
 
