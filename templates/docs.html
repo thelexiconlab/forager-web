@@ -63,28 +63,12 @@ This policy allows correcting for minor variants, plurals, and spelling errors w
   across all other items in the vocabulary. </p>
 
 <p>After providing the file containing the fluency lists and specifying an OOV policy, the web interface of forager runs through 
-  the data and provides the evaluation results in a <code>.zip</code> file, which contains three <code>.csv</code> files:
-
-  <ol>
-    <li><code>evaluation_results.csv</code>: This file contains the evaluation results for each fluency list, organized in the order 
-      of the fluency list. The first two columns contain the participant ID (SID) and item produced (entry). The third column (evaluation)
-      contains the evaluation results for each item, which can be one of the following: FOUND (if the item is in the lexicon), 
-      REPLACE (if a reasonable replacement was found), EXCLUDE (if the user chose to exclude the item), TRUNCATE (if the user chose to
-      truncate the list), or UNK (if the user chose to replace the item with the UNK vector). The fourth column (replacement) contains
-      the corresponding replacement. </li>
-      <li><code>processed_data.csv</code>: This file contains the final data that will be used by forager for further analyses. 
-        Users are encouraged to check this file to ensure that the data preparation process was successful. 
-      </li>
-      <li>
-        <code>forager_vocab.csv</code>: This file contains the vocabulary that was used by forager for the data preparation process. Users
-        are encouraged to use this file to make any adjustments to their data before proceeding with analyses. 
-      </li>
-  </ol>
+  the data and provides the evaluation results in a <code>.zip</code> file, which contains three <code>.csv</code> files (see <a href="#out">outputs</a> for details).
 </p>
 
 <h2 id="switch">switch methods</h2>
 
-<p>forager provides four different methods for determining clusters and switches in a fluency list: 
+<p>forager provides five different methods for determining clusters and switches in a fluency list: 
   <ol>
     <li><b>Norm-based</b>, based on the hand-coded norms of animal subcategories created by Troyer et al. (1997; e.g., pets, aquatic animals, etc.) and subsequently extended by Lundin et al. (2022) and Zemla et al. (2020). There are two norm-based methods provided (based on Hills et al. 2015): </li> 
       <ul>
@@ -96,7 +80,7 @@ This policy allows correcting for minor variants, plurals, and spelling errors w
     <li><b>Multimodal similarity drop</b>, where the similarity between consecutive items is a weighted sum of the semantic and phonological similarity, and switches correspond to drops in semantic-phonological similarity.</li>
   </ol>
 
-  The file <code>switch_results.csv</code> will contain the item-level cluster/switch designations for each method. A switch is indicated by a 1, and a cluster is indicated by a 0. A value of 2 indicates that no designation was available for that item (e.g., the first item in a list). Rows with a value of 2 should be removed before any comparisons or analyses.
+  The file <code>switch_results.csv</code> will contain the item-level cluster/switch designations for each method (see <a href="#out">outputs</a> for details).
 
   <h2 id="models">models</h2>
 
@@ -116,58 +100,53 @@ This policy allows correcting for minor variants, plurals, and spelling errors w
   <li><b>Phonology-based models. </b>In addition to the classic foraging models described above, we also introduce and release a range of experimental models that explore the influence of phonology in local (within-cluster) and global (between-cluster) transitions. Specifically, we adapted the static and dynamic models from Hills et al. (2012) to incorporate phonological similarity cues, based on recent work by Kumar, Lundin, and Jones (2022). The static phonology model is identical to the static model above, except that the product of the frequencies and semantic similarities is also multiplied by phonological similarities. Like the frequency and semantic similarity cues, the phonological similarity is also weighted by a saliency parameter. The dynamic phonology model has an additional argument specifying the type of phonological cue used from the following options: “local,” “global,” or “switch.” The “local” dynamic model incorporates phonological similarity as an additional cue for within-cluster transitions. The “global” dynamic model incorporates phonological similarity in both switch and cluster transitions. Finally, the “switch” dynamic model computes the likelihood of an item based on phonological similarity and frequency for switch transitions and based on semantic similarity and frequency for cluster transitions. </li>
    </ol>
 
+   The file <code>model_results.csv</code> will contain the model-based negative log-likelihoods for the selected models (see <a href="#out">outputs</a> for details).
+
    <h2 id="out">outputs</h2>
    <p>
 
-    Different output files are generated when forager is run, based on the use case:
-
-    <ol>
- <li><b>Get Lexical Values</b>: If the user selects this option, the following files will be available for download via a <code>.zip</code> file: 
-
-  <ul>
-    <li> <code>lexical_results.csv</code>: This file contains item-wise lexical metrics (semantic similarity, 
-    phonological similarity, and word frequency). The semantic and phonological similarities indicate the similarity between 
-    the previous item and current item, whereas the frequency values indicate the frequency of the current item in the English language 
-    (obtained via Google N-grams). </li>
-    <li><code>individual_descriptive_stats.csv</code>: This file contains some aggregate metrics at the participant level 
-      such as total number of items produced, as well as mean semantic similarity, phonological similarity, and word frequency.
-    </li>
-    <li>The three files from the evaluation phase (see <a href="#oov">handling OOV words</a> for details). </li>
-  </ul>
-</li>
-
-<li><b>Get Switches</b>: If the user selects this option, the following files will be available for download via a <code>.zip</code> file: 
-
-  <ul>
-    <li> <code>switch_results.csv</code>: This file contains the item-level cluster/switch designations for each method. 
-      A switch is indicated by a 1, and a cluster is indicated by a 0. A value of 2 indicates that no designation was available for that item (e.g., the first item in a list). 
-      Rows with a value of 2 should be removed before any comparisons or analyses. </li>
-      <li> <code>lexical_results.csv</code>: This file will be identical to the one generated in the <b>Get Lexical Values</b> option. </li>
-    <li><code>individual_descriptive_stats.csv</code>: In addition to the metrics available from lexical results 
-      (mean lexical values and number of items), this file will also contain the total number of switches and mean cluster size 
-    for each switch method </li>
-    <li><code>aggregate_descriptive_stats.csv</code>: This file will contain mean/SD for the number of switches (aggregated across all 
-    participants) for each switch method.</li>
-    <li>The three files from the evaluation phase (see <a href="#oov">handling OOV words</a> for details). </li>
-  </ul>
-</li>
-
-<li><b>Get Models</b>: If the user selects this option, they will be redirected to a Colab notebook, 
-  where they can upload their data and run the models. In addition to the files generated in the <b>Get Switches</b> option,
-  the following files will be available for download via a <code>.zip</code> file:
-  <ul>
-    <li><code>model_results.csv</code>: This file will contain the model-based negative log-likelihoods for the selected models 
-      (see <a href="#models">models</a> for details), as well as the best-fitting parameters for 
-      semantic, phonological, and frequency cues for each model, at the subject level. </li>
-      <li><code>aggregate_descriptive_stats.csv</code>: In addition to the metrics available from the <b>Get Switches</b> option, 
-        this file will also contain the mean values of the parameters (aggregated across all participants) for each model
-        and switch method. </li>
-      </li>
     
-  </ul>
- 
-    </ol>
+  <p>Different output files are generated when forager is run, based on the use case:</p>
 
+  <ul>
+    <li>
+      <strong>Evaluate/Check Data</strong>: If the user first evaluates the data they wish to analyze, the following files will be available for download via a <code>.zip</code> file:
+      <ul>
+        <li><code>evaluation_results.csv</code>: This file will contain the results from <em>forager</em>'s evaluation of all the items in the data against its own vocabulary. The <code>evaluation</code> column in the file will describe whether an exact match to the item was found (FOUND), or a reasonable replacement was made (REPLACE), and how the OOV items were handled based on the user-specified policy (EXCLUDE/TRUNCATE/RANDOM). The <code>replacement</code> column in the file will describe the specific replacements made to the items.</li>
+        <li><code>processed_data.csv</code>: This file will contain the final data that will be submitted for further analyses to <em>forager</em>. Users should carefully inspect this file to ensure that it aligns with their expectations, and make changes if needed.</li>
+        <li><code>forager_vocab.csv</code>: This file contains the vocabulary used by <em>forager</em> to conduct the evaluation. We provide this file so that users can make changes to their data if needed before they proceed with other analyses.</li>
+      </ul>
+    </li>
+    
+    <li>
+      <strong>Get Lexical Values</strong>: If the user selects this option, the following files will be available for download via a <code>.zip</code> file:
+      <ul>
+        <li><code>lexical_results.csv</code>: This file contains item-wise lexical metrics (semantic similarity, phonological similarity, and word frequency). The semantic and phonological similarities indicate the similarity between the previous item and current item (the first item will have an arbitrary value of .0001), whereas the frequency values indicate the frequency of the current item in the English language (obtained via Google N-grams).</li>
+        <li><code>individual_descriptive_stats.csv</code>: This file contains some aggregate metrics at the participant level such as total number of items produced, as well as means/SDs of semantic similarity, phonological similarity, and word frequency.</li>
+        <li>The three files from the evaluation phase (see <a href="#oov">handling OOV words</a> for details).</li>
+      </ul>
+    </li>
+    
+    <li>
+      <strong>Get Switches</strong>: If the user selects this option, the following files will be available for download via a <code>.zip</code> file:
+      <ul>
+        <li><code>switch_results.csv</code>: This file contains the item-level cluster/switch designations for each method. A switch is indicated by a 1, and a cluster is indicated by a 0. A value of 2 either denotes the first item in the list or the last item(s) for switch methods that rely on previous/subsequent items (i.e., no switch/cluster prediction can be made).</li>
+        <li><code>lexical_results.csv</code>: This file will be identical to the one generated in the <strong>Get Lexical Values</strong> option.</li>
+        <li><code>individual_descriptive_stats.csv</code>: In addition to the metrics available from lexical results (mean/SD of lexical values and number of items), this file will also contain the total number of switches and mean cluster size for each switch method.</li>
+        <li><code>aggregate_descriptive_stats.csv</code>: This file will contain mean/SD for the number of switches (aggregated across all participants) for each switch method.</li>
+        <li>The three files from the evaluation phase (see <a href="#oov">handling OOV words</a> for details).</li>
+      </ul>
+    </li>
+
+    <li>
+      <strong>Get Models</strong>: If the user selects this option, they will be redirected to a Colab notebook, where they can upload their data and run the models. In addition to the files generated in the <strong>Get Switches</strong> option, the following files will be available for download via a <code>.zip</code> file:
+      <ul>
+        <li><code>model_results.csv</code>: This file will contain the model-based negative log-likelihoods for the selected models (see <a href="#models">models</a> for details), as well as the best-fitting parameter values for semantic, phonological, and frequency cues for each model, at the subject level. A random baseline model is also included for comparison purposes. The random baseline model assigns an equal likelihood to every item in the fluency list.</li>
+        <li><code>aggregate_descriptive_stats.csv</code>: In addition to the metrics available from the <strong>Get Switches</strong> option, this file will also contain the mean/SD values of the parameters (aggregated across all participants) for each model and switch method.</li>
+      </ul>
+    </li>
+  </ul>
+  
     Possible analyses with forager include finding the best-fitting model for a set of fluency lists, evaluating the performance of a specific model, obtaining metrics of semantic and/or phonological similarity as well as different cluster/switch designations, and comparing the model performance for different groups. 
     Users are encouraged to read the paper for demonstrations of these analyses.
    </p>

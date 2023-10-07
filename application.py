@@ -140,8 +140,8 @@ def get_results(file, switch):
             
             results = {"switch_results" : switch_results,
                         "lexical_results" : lexical_results,
-                        "individual_descriptive_stats.csv" : ind_stats,
-                        "aggregate_descriptive_stats.csv" : agg_stats,
+                        "individual_descriptive_stats" : ind_stats,
+                        "aggregate_descriptive_stats" : agg_stats,
                        "evaluation_results": evaluation_compiled_data[0],
                        "processed_data": evaluation_compiled_data[1],
                        "forager_vocab": evaluation_compiled_data[2]}
@@ -149,7 +149,7 @@ def get_results(file, switch):
             sim_results = run_sims(data_lists_global)
             ind_stats = indiv_desc_stats(sim_results)
             results = {"lexical_results" : sim_results,
-                        "individual_descriptive_stats.csv" : ind_stats,
+                        "individual_descriptive_stats" : ind_stats,
                        "evaluation_results": evaluation_compiled_data[0],
                        "processed_data": evaluation_compiled_data[1],
                        "forager_vocab": evaluation_compiled_data[2]}
