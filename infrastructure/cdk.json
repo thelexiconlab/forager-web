@@ -2,6 +2,14 @@
     "app": "python3 infrastructure.py",
     "context": {
         "project": "forager-web",
+        "tags": {
+            "CostCenter": "429353",
+            "compliance": "none",
+            "createdby": "houser@bowdoin.edu",
+            "classification" : "Public",
+            "managedby" : "houser@bowdoin.edu",
+            "managedfor" : "a.kumar@bowdoin.edu"
+        },
 
         "region": "us-east-1",
         "account": "640202414923",
@@ -9,15 +17,17 @@
 
         "github_connection_arn": "arn:aws:apprunner:us-east-1:640202414923:connection/forager-apprunner-houser/de731298cb4d458f97faff3b049db3a6",
         "github_repo": "https://github.com/thelexiconlab/forager-web",
-        "github_branch": "deploy",
+        "github_branch": "main",
 
         "dev": {
             "name": "forager-web-dev",
-            "description": "Forager Application Development"
+            "description": "Forager Application Development",
+            "environment": "dev"
         },
         "prod": {
             "name": "forager-web",
-            "description": "Forager Application Production"
+            "description": "Forager Application Production",
+            "environment": "prod"
         }
     }
 }

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 # Forager Web Infrastructure AWS
 # 
 # The following are the components of the supporting infrastructure
@@ -20,23 +19,23 @@ from aws_cdk import (
 from constructs import Construct
 
 BUILD_COMMAND='pip install pipenv && pipenv install'
-START_COMMAND='pipenv run gunicorn -w 4 --bind 0.0.0.0:8080 --access-logfile=- application:application'
+START_COMMAND='pipenv run gunicorn -w 4 --bind 0.0.0.0:8080 --access-logfile=- --timeout=1800 application:application'
 
 class SimpleDBStack(Stack):
     def __init__(self, scope:Construct, id:str,
             instance_type = None,       ## ec2.InstanceType
             github_connection_arn = None,
             github_repo = None,
-            github_branch = None,   
-            vpc_name = None,      
+            github_branch = None,
+            vpc_name = None,
             **kwargs) -> None:
         super().__init__(app, id, **kwargs)
 
-        # VPC with public subnet for database 
+        # VPC with public subnet for database
         vpc = ec2.Vpc.from_lookup(self, "vpc",
             # is_default=True
             # vpc_id = "vpc-01b8470d4eb93b108"
-            vpc_name = vpc_name        
+            vpc_name = vpc_name
         )
 
         if not instance_type:
@@ -46,7 +45,7 @@ class SimpleDBStack(Stack):
         ##
         ## AppRunner Service
         ##
-        vpc_connector = apprunner.VpcConnector(self, 'vpcConnector', 
+        vpc_connector = apprunner.VpcConnector(self, 'vpcConnector',
             vpc = vpc,
             vpc_subnets = ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC)
         )
@@ -69,7 +68,7 @@ class SimpleDBStack(Stack):
                 )
             )
         )
-  
+
 #
 # Instantiate the app and stack
 #
@@ -83,14 +82,21 @@ def get_context(key):
     # use deploymentType value if present
     if key in deployment_config:
         return deployment_config[key]
-    
+
     # otherwise use default value in general context
     return app.node.try_get_context(key)
 
 app = App()
-Tags.of(app).add('project', get_context('project'))
 
-SimpleDBStack(app, get_context('name'), 
+# Bowdoin Cloud Tags
+# https://bowdoin.atlassian.net/wiki/spaces/ITKB/pages/2164589/Cloud+Tagging+Standards
+Tags.of(app).add('environment', get_context('deploymentType'))
+for tag, value in get_context('tags').items():
+    Tags.of(app).add(tag, value)
+
+#Tags.of(app).add('project', get_context('project'))
+
+SimpleDBStack(app, get_context('name'),
     env={ "region": get_context('region'), "account": get_context('account') }, 
     description=get_context('description'),
     vpc_name=get_context('vpc_name'),
