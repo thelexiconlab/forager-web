@@ -28,6 +28,6 @@ constructs = ">=10.0.0"
 cdk-nag = ">=2.0.0"
 "aws-cdk.aws-apprunner-alpha" = "*"
 
-
+# Don't uncomment: This is a reminder that AWS AppRunner uses Python 3.8
 #[requires]
-#python_version = "3.11"
+#python_version = "3.8"
