@@ -22,6 +22,9 @@ tqdm = "==4.64.1"
 werkzeug = "==2.2.2"
 gunicorn = "*"
 requests = "*"
+tensorflow == "2.14.0"
+tensorflow_hub == "0.15.0""
+werkzeug == "2.2.0"
 
 [dev-packages]
 aws-cdk-lib = ">=2.0.0"
