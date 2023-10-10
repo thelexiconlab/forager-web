@@ -2,6 +2,7 @@
   "vpc-provider:account=640202414923:filter.tag:Name=faculty-projects-vpc:region=us-east-1:returnAsymmetricSubnets=true": {
     "vpcId": "vpc-01b8470d4eb93b108",
     "vpcCidrBlock": "10.0.0.0/16",
+    "ownerAccountId": "640202414923",
     "availabilityZones": [],
     "subnetGroups": [
       {
