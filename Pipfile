@@ -21,9 +21,9 @@ six = "==1.16.0"
 tqdm = "==4.64.1"
 werkzeug = "==2.2.2"
 gunicorn = "*"
-requests = "==2.31.0"
-urllib3 = "==1.26.6"
-tensorflow = "==2.14.0"
+urllib3 = "<2"
+requests = "<2.30.0"
+tensorflow = "==2.13.0"
 tensorflow_hub = "==0.15.0"
 alive_progress = "==3.1.4"
 
@@ -33,6 +33,5 @@ constructs = ">=10.0.0"
 cdk-nag = ">=2.0.0"
 "aws-cdk.aws-apprunner-alpha" = "*"
 
-
 #[requires]
-#python_version = "3.11"
+#python_version = "3.8"
