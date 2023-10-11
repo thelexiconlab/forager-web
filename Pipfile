@@ -23,7 +23,7 @@ werkzeug = "==2.2.2"
 gunicorn = "*"
 urllib3 = "<2"
 requests = "<2.30.0"
-tensorflow = "*"
+#tensorflow = "*"
 tensorflow_hub = "*"
 alive_progress = "*"
 
