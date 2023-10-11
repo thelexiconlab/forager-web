@@ -26,7 +26,6 @@ requests = "<2.30.0"
 #tensorflow = "*"
 tensorflow_hub = "*"
 alive_progress = "*"
-tensorflow = "*"
 
 [dev-packages]
 aws-cdk-lib = ">=2.0.0"
