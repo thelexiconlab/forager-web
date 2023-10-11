@@ -26,12 +26,12 @@ requests = "<2.30.0"
 #tensorflow = "*"
 tensorflow_hub = "*"
 alive_progress = "*"
+tensorflow = "*"
 
 [dev-packages]
 aws-cdk-lib = ">=2.0.0"
 constructs = ">=10.0.0"
 cdk-nag = ">=2.0.0"
 "aws-cdk.aws-apprunner-alpha" = "*"
-
 #[requires]
 #python_version = "3.8"
