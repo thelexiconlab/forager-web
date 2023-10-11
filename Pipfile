@@ -23,9 +23,9 @@ werkzeug = "==2.2.2"
 gunicorn = "*"
 urllib3 = "<2"
 requests = "<2.30.0"
-tensorflow = "==2.13.0"
-tensorflow_hub = "==0.15.0"
-alive_progress = "==3.1.4"
+tensorflow = "*"
+tensorflow_hub = "*"
+alive_progress = "*"
 
 [dev-packages]
 aws-cdk-lib = ">=2.0.0"
