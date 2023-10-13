@@ -18,9 +18,9 @@ from scipy.optimize import fmin
 import os
 from tqdm import tqdm
 
-import tensorflow as tf
+#import tensorflow as tf
 
-import tensorflow_hub as hub
+#import tensorflow_hub as hub
 import re
 from alive_progress import alive_bar 
 
