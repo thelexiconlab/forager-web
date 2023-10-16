@@ -1,1 +1,6 @@
 1	muffin2
+1	cat
+1	dug
+2	hors
+2	anemone
+2	jaguar

@@ -5,6 +5,21 @@ import nltk
 from functools import lru_cache
 from itertools import product as iterprod
 import re
+import urllib
+import requests
+
+from tqdm import tqdm
+
+#import tensorflow as tf
+
+#import tensorflow_hub as hub
+import numpy as np
+import os
+import pandas as pd
+import re
+from alive_progress import alive_bar 
+
+
 
 '''
 
@@ -73,6 +88,94 @@ def create_history_variables(fluency_list, labels, sim_matrix, freq_matrix, phon
                 phon_history.append(phon_matrix[currentwordindex,:])
 
     return sim_list, sim_history, freq_list, freq_history,phon_list, phon_history
+
+def get_oov_sims(fluency_list, labels, sim_matrix, freq_matrix, phon_matrix = None):
+    """
+    this is for the special case when they want to generate embeddings on the fly for the data
+    """
+    sim_list = []
+    phon_list = []
+    freq_list = []
+
+    
+
+    module_url = "https://tfhub.dev/google/universal-sentence-encoder/4"
+    model = hub.load(module_url)
+
+    for i in range(0,len(fluency_list)):
+        if i == 0: # first word
+            sim_list.append(0.0001)
+            if phon_matrix is not None:
+                phon_list.append(0.0001)
+            
+            word = fluency_list[i]
+            if word in labels:
+                currentwordindex = labels.index(word)
+                freq_list.append(freq_matrix[currentwordindex])
+            else:
+                freq_word = get_frequency(word)
+                freq_list.append(freq_word)
+        else:
+            # check if word is in labels
+            word = fluency_list[i]
+            prev_word = fluency_list[i-1]
+            if word not in labels or prev_word not in labels:
+                # get embeddings for word
+                embedding_word = create_embeddings(word, model)
+                # get embeddings for prev_word
+                embedding_prev_word = create_embeddings(prev_word, model)
+                # get cosine similarity between word and prev_word
+                semantic_similarity = scipy.spatial.distance.cosine(embedding_word, embedding_prev_word)
+                # get phonological similarity between word and prev_word
+                word = re.sub('[^a-zA-Z]', '', word)
+                phonemes_word = phonology_funcs.wordbreak(word)[0]
+                prev_word = re.sub('[^a-zA-Z]', '', prev_word)
+                phonemes_prev_word = phonology_funcs.wordbreak(prev_word)[0]
+                phonological_similarity = phonology_funcs.normalized_edit_distance(phonemes_word, phonemes_prev_word)
+                
+                # get frequency of word
+                freq_word = get_frequency(word)
+                
+                # add these to the lists
+                sim_list.append(semantic_similarity)
+                phon_list.append(phonological_similarity)
+                freq_list.append(freq_word)
+            else:
+                
+                currentwordindex = labels.index(word)
+                prevwordindex = labels.index(prev_word)
+                sim_list.append(sim_matrix[prevwordindex, currentwordindex] )
+                if phon_matrix is not None:
+                    phon_list.append(phon_matrix[prevwordindex, currentwordindex] )
+                freq_list.append(freq_matrix[currentwordindex])
+    
+    return sim_list, freq_list, phon_list
+            
+def create_embeddings (OOV_word, model): 
+    """
+    Create embeddings for OOV words using the Universal Sentence Encoder
+    """ 
+    
+    # loop through labels and get embeddings
+    embeddings = model([OOV_word]).numpy()[0]
+    return embeddings
+        
+def get_frequency(word):
+    new = word.replace("_", " ")
+    encoded_query = urllib.parse.quote(new)
+    params = {'corpus': 'eng-us', 'query': encoded_query, 'topk': 10, 'format': 'tsv'}
+    params = '&'.join('{}={}'.format(name, value) for name, value in params.items())
+    response = requests.get('https://api.phrasefinder.io/search?' + params)
+
+    response_flat = re.split('\n|\t',response.text)[:-1]
+    response_table = pd.DataFrame(np.reshape(response_flat, newshape=(-1,7))).iloc[:,:2]
+    response_table.columns = ['word','count']
+    response_table['word'] = response_table['word'].apply(lambda x: re.sub('_0','', x))
+
+    count = response_table['count'].astype(float).sum()
+    log_count = np.log10(count) if count > 0 else 0.0001
+    return log_count
+    
 
 def get_labels_and_frequencies(path_to_frequencies):
     '''

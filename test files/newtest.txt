@@ -1,0 +1,15 @@
+1	muffin2
+1	cat
+1	rat
+1	dug
+2	hors
+2	pig
+2	calf
+2	anemone
+2	jaguar
+2	peanut butter
+3	peanut
+3	bluejay
+3	eagle
+3	kingfisher
+3	tiger

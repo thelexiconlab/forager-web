@@ -1,17 +1,18 @@
-51	cat
-51	dog
-51	mouse
-51	rat
-51	giraffe
-51	lion
-51	zebra
-51	rhino
-51	ostrich
-51	meerkat
-51	tiger
-51	bear
-51	bat
-51	aardvark
+ID	item	Time
+51	cat	1
+51	dog	1
+51	mouse	1
+51	rat	2
+51	giraffe	2
+51	lion	2
+51	zebra	2
+51	rhino	2
+51	ostrich	3
+51	meerkat	3
+51	tiger	3
+51	bear	3
+51	bat	3
+51	aardvark	3
 51	elephant
 51	flea
 51	ferret

@@ -1,0 +1,111 @@
+<% extends 'base.html' %>
+
+<% block header %>
+  <h1>cite</h1>
+<% endblock %>
+
+<% block content %>
+
+<style>
+  .code-container {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 10px 0;
+    font-family: monospace;
+    text-align: left;
+  }
+
+  .copy-button {
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+
+/* Adjust padding of <li> elements */
+.code-container li {
+  padding: 3px 0;
+}
+
+.code-container pre {
+  margin: 0; /* Remove default margin */
+  padding: 0; /* Remove default padding */
+}
+</style>
+
+<div id="section">
+    <p>
+        Users are encouraged to cite the following references when using <i>forager</i>:
+    </p>
+
+    <div class="code-container">
+        <pre id="code-block">
+            <ol>
+                <li>Kumar, A.A., Apsel, M., Zhang, L., Xing, N., Jones. M.N. (2023). forager: A Python package and web interface for modeling mental search</li>
+                <li>Kumar, A.A., Lundin, N. B., Jones, M.N. (2022). Mouse-mole-vole: The inconspicuous benefits of phonology during retrieval from semantic memory. In <i>Proceedings of the 44th Annual Meeting of the Cognitive Science Society</i>.</li>
+                <li>Hills, T. T., Jones, M. N., & Todd, P. M. (2012). Optimal foraging in semantic memory. <i>Psychological Review</i>, <i>119</i>(2), 431.</li>
+            </ol>
+        </pre>
+    </div>
+
+    <div>
+        <button class="copy-button" onclick="copyCode()">copy citations</button> 
+        <button class="copy-button" onclick="copyBibtex()">copy bibTeX</button>
+    </div>
+</div>
+
+<script>
+    function copyCode() {
+        var codeElement = document.getElementById('code-block');
+        var codeText = codeElement.innerText;
+
+        var textarea = document.createElement('textarea');
+        textarea.value = codeText;
+        document.body.appendChild(textarea);
+
+        textarea.select();
+        document.execCommand('copy');
+
+        document.body.removeChild(textarea);
+
+        alert('Citations copied to clipboard!');
+    }
+
+    function copyBibtex() {
+        var bibtexText = `@article{kumar2023forager,
+            title={forager: A Python package and web interface for modeling mental search},
+            author={Kumar, Abhilasha and Apsel, Molly and Zhang, Larry and Xing, Nancy and Jones, Michael N},
+            year={2023},
+            publisher={PsyArXiv}
+        }
+
+        @inproceedings{kumar2022mouse,
+            title={Mouse-mole-vole: The inconspicuous benefit of phonology during retrieval from semantic memory},
+            author={Kumar, Abhilasha A and Lundin, Nancy B and Jones, Michael N},
+            booktitle={Proceedings of the annual meeting of the Cognitive Science Society},
+            year={2022}
+        }
+
+        @article{hills2012optimal,
+            title={Optimal foraging in semantic memory.},
+            author={Hills, Thomas T and Jones, Michael N and Todd, Peter M},
+            journal={Psychological review},
+            volume={119},
+            number={2},
+            pages={431},
+            year={2012},
+            publisher={American Psychological Association}
+        }`;
+
+        var textarea = document.createElement('textarea');
+        textarea.value = bibtexText;
+        document.body.appendChild(textarea);
+
+        textarea.select();
+        document.execCommand('copy');
+
+        document.body.removeChild(textarea);
+
+        alert('BibTeX copied to clipboard!');
+    }
+</script>
+
+<% endblock %>
