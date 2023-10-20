@@ -248,13 +248,11 @@
                 
                 if(selectedOption === 'get-sims' && $scope.OOVchoice !== 'process'){
                     payload.append('selected-sims', 'sims');
-                } 
-                else if(selectedOption === 'get-sims' && $scope.OOVchoice === 'process'){
-                    console.log("sending process")
-                    payload.append('selected-process', 'process');
+                    payload.append('selected-oov', $scope.OOVchoice);
                 } 
                 else if(selectedOption === 'get-switch'){
                     payload.append('selected-switch', selectedSwitch);
+                    payload.append('selected-oov', $scope.OOVchoice);
                 }
 
                 var payloadUrl = "/run-model" 

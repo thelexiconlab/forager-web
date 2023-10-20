@@ -44,17 +44,17 @@ def index():
 
 @application.route('/evaluate-data', methods=['POST'])
 def get_data_evaluation():
-    global data_lists_global  # Declare data_lists as global variable
+    #global data_lists_global  # Declare data_lists as global variable
     
     evaluation_message = "No file uploaded."
     data_results = None
-    global evaluation_compiled_data # Declare evaluation_compiled_data as global variable, so we can combine outputs later
+    #global evaluation_compiled_data # Declare evaluation_compiled_data as global variable, so we can combine outputs later
     f = request.files['filename']
     if f: 
         user_oov_choice = request.form['selected-oov']
         evaluation_message, replacement_df, data_df, data_lists_local = get_evaluation_message(f, user_oov_choice)
         forager_vocab = pd.read_csv("data/lexical_data/vocab.csv")
-        evaluation_compiled_data = [replacement_df, data_df, forager_vocab]
+        #evaluation_compiled_data = [replacement_df, data_df, forager_vocab]
         data_results = get_data_results(evaluation_message, replacement_df, data_df, forager_vocab)
     else:
         abort(400)
@@ -62,7 +62,7 @@ def get_data_evaluation():
     if data_results is None:
         abort(400)
     else:
-        data_lists_global = [(str(idx), words) for idx, words in data_lists_local]
+        #data_lists_global = [(str(idx), words) for idx, words in data_lists_local]
         return data_results
 
 def get_data_results(eval_msg, replacement_df, data_df, vocab):
@@ -104,14 +104,13 @@ def upload_file():
     if f:  
         if 'selected-sims' in request.form:
             simval = request.form['selected-sims']
-            results = get_results(f, simval)
-        elif 'selected-process' in request.form:
-            process_val = request.form['selected-process']
-            results = get_results(f, process_val)
+            oov_choice = request.form['selected-oov']
+            results = get_results(f, simval, oov_choice)
         elif 'selected-switch' in request.form:
             switch = request.form['selected-switch']
+            oov_choice = request.form['selected-oov']
             print("switch is " + switch)
-            results = get_results(f, switch)
+            results = get_results(f, switch, oov_choice)
         else:
             abort(400)
     else:
@@ -126,33 +125,36 @@ def upload_file():
 
 
 # Compute results files. Returns Zipfile containing outputs, or none if error.  
-def get_results(file, switch):
+def get_results(file, switch, oov_choice):
 
     # Prepare data and run model for selected features
     try:
-        if switch == "process":
-            oov_results = run_sims_oov(data_lists_global)
-            results = {"oov_results" : oov_results}
-        elif switch != "sims":
-            switch_results, lexical_results = run_switch(data_lists_global, switch)
+        if switch != "sims":
+            evaluation_message, replacement_df, data_df, data_lists_local = get_evaluation_message(file, oov_choice)
+            data_lists = [(str(idx), words) for idx, words in data_lists_local]
+            switch_results, lexical_results = run_switch(data_lists, switch)
             ind_stats = indiv_desc_stats(lexical_results, switch_results)
             agg_stats = agg_desc_stats(switch_results)
+            forager_vocab = pd.read_csv("data/lexical_data/vocab.csv")
             
             results = {"switch_results" : switch_results,
                         "lexical_results" : lexical_results,
                         "individual_descriptive_stats" : ind_stats,
                         "aggregate_descriptive_stats" : agg_stats,
-                       "evaluation_results": evaluation_compiled_data[0],
-                       "processed_data": evaluation_compiled_data[1],
-                       "forager_vocab": evaluation_compiled_data[2]}
+                       "evaluation_results": replacement_df,
+                       "processed_data": data_df,
+                       "forager_vocab": forager_vocab}
         elif switch == "sims":
-            sim_results = run_sims(data_lists_global)
+            evaluation_message, replacement_df, data_df, data_lists_local = get_evaluation_message(file, oov_choice)
+            data_lists = [(str(idx), words) for idx, words in data_lists_local]
+            sim_results = run_sims(data_lists)
             ind_stats = indiv_desc_stats(sim_results)
+            forager_vocab = pd.read_csv("data/lexical_data/vocab.csv")
             results = {"lexical_results" : sim_results,
                         "individual_descriptive_stats" : ind_stats,
-                       "evaluation_results": evaluation_compiled_data[0],
-                       "processed_data": evaluation_compiled_data[1],
-                       "forager_vocab": evaluation_compiled_data[2]}
+                       "evaluation_results": replacement_df,
+                       "processed_data": data_df,
+                       "forager_vocab": forager_vocab}
         
     except: 
         return None
