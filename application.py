@@ -109,7 +109,7 @@ def upload_file():
         elif 'selected-switch' in request.form:
             switch = request.form['selected-switch']
             oov_choice = request.form['selected-oov']
-            print("switch is " + switch)
+            #print("switch is " + switch)
             results = get_results(f, switch, oov_choice)
         else:
             abort(400)
