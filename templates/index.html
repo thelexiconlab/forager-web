@@ -371,7 +371,7 @@
                         <option value="exclude">Exclude OOV</option>
                         <option value="truncate">Truncate after OOV</option>
                         <!--<option value="process">Generate on the fly</option>-->
-                        <option value="random">Assign a random vector to OOV</option>
+                        <option value="random">Assign mean vector to OOV</option>
                     </select>
                     <!-- Pass the selected choice to the evaluateDataButton function -->
                     <button id="eval-data-button" ng-click="evaluateDataButton(userChoice)" ng-show="userFile && userChoice">Check Data</button>
