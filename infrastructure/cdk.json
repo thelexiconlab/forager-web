@@ -17,7 +17,7 @@
 
         "github_connection_arn": "arn:aws:apprunner:us-east-1:640202414923:connection/forager-apprunner-houser/de731298cb4d458f97faff3b049db3a6",
         "github_repo": "https://github.com/thelexiconlab/forager-web",
-        "github_branch": "deploy",
+        "github_branch": "main",
 
         "dev": {
             "name": "forager-web-dev",
