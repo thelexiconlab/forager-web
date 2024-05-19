@@ -58,9 +58,9 @@ This policy allows correcting for minor variants, plurals, and spelling errors w
 
 <p>If the edit distance between the OOV item and the closest match found in the lexicon is more than two, then forager provides
   three options to the user: exclude all occurrences of the OOV item, truncate the list(s) at the first occurrence of the OOV item,
-  or replace the OOV item with a random vector/label from the lexicon. This random vector (UNK) has a semantic vector that is 
+  or replace the OOV item with a mean/random vector/label from the lexicon. This random vector (UNK) has a semantic vector that is 
   the centroid of all other vectors in the lexicon and the phonological similarity of this label is the average phonological similarity
-  across all other items in the vocabulary. </p>
+  across all other items in the vocabulary. The frequency of this random vector is set to 0.0001.  </p>
 
 <p>After providing the file containing the fluency lists and specifying an OOV policy, the web interface of forager runs through 
   the data and provides the evaluation results in a <code>.zip</code> file, which contains three <code>.csv</code> files (see <a href="#out">outputs</a> for details).
@@ -112,7 +112,7 @@ This policy allows correcting for minor variants, plurals, and spelling errors w
     <li>
       <strong>Evaluate/Check Data</strong>: If the user first evaluates the data they wish to analyze, the following files will be available for download via a <code>.zip</code> file:
       <ul>
-        <li><code>evaluation_results.csv</code>: This file will contain the results from <em>forager</em>'s evaluation of all the items in the data against its own vocabulary. The <code>evaluation</code> column in the file will describe whether an exact match to the item was found (FOUND), or a reasonable replacement was made (REPLACE), and how the OOV items were handled based on the user-specified policy (EXCLUDE/TRUNCATE/RANDOM). The <code>replacement</code> column in the file will describe the specific replacements made to the items.</li>
+        <li><code>evaluation_results.csv</code>: This file will contain the results from <em>forager</em>'s evaluation of all the items in the data against its own vocabulary. The <code>evaluation</code> column in the file will describe whether an exact match to the item was found (FOUND), or a reasonable replacement was made (REPLACE), and how the OOV items were handled based on the user-specified policy (EXCLUDE/TRUNCATE/UNK). The <code>replacement</code> column in the file will describe the specific replacements made to the items.</li>
         <li><code>processed_data.csv</code>: This file will contain the final data that will be submitted for further analyses to <em>forager</em>. Users should carefully inspect this file to ensure that it aligns with their expectations, and make changes if needed.</li>
         <li><code>forager_vocab.csv</code>: This file contains the vocabulary used by <em>forager</em> to conduct the evaluation. We provide this file so that users can make changes to their data if needed before they proceed with other analyses.</li>
       </ul>

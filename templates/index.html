@@ -248,13 +248,11 @@
                 
                 if(selectedOption === 'get-sims' && $scope.OOVchoice !== 'process'){
                     payload.append('selected-sims', 'sims');
-                } 
-                else if(selectedOption === 'get-sims' && $scope.OOVchoice === 'process'){
-                    console.log("sending process")
-                    payload.append('selected-process', 'process');
+                    payload.append('selected-oov', $scope.OOVchoice);
                 } 
                 else if(selectedOption === 'get-switch'){
                     payload.append('selected-switch', selectedSwitch);
+                    payload.append('selected-oov', $scope.OOVchoice);
                 }
 
                 var payloadUrl = "/run-model" 
@@ -358,7 +356,7 @@
             <div ng-show="(selectedOption === 'get-sims') || (selectedOption === 'get-switch' && selectedSwitch !== '')">
                 
                 <h3>Upload your data</h3>
-                <p>Upload data as a tab-delimited .txt or CSV file, with column headers for subject ID and words. <br> <br>
+                <p>Upload data as a tab-delimited .txt or CSV file, with column headers for subject ID and words. Please review the <a href="docs">docs</a> page to understand the file formats <i>forager</i> accepts. <br> <br>
                     <b>Please note</b>: If your data has 3 columns, forager will automatically treat the third column as a timepoint.
                     If you do not want this, please remove the third column before uploading.
                 </p>
@@ -373,7 +371,7 @@
                         <option value="exclude">Exclude OOV</option>
                         <option value="truncate">Truncate after OOV</option>
                         <!--<option value="process">Generate on the fly</option>-->
-                        <option value="random">Assign a random vector to OOV</option>
+                        <option value="random">Assign mean vector to OOV</option>
                     </select>
                     <!-- Pass the selected choice to the evaluateDataButton function -->
                     <button id="eval-data-button" ng-click="evaluateDataButton(userChoice)" ng-show="userFile && userChoice">Check Data</button>

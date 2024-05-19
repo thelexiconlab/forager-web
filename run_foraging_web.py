@@ -1,3 +1,4 @@
+# forager-web
 # Contains functions from run_foraging rewritten to support API requests in the api_router module.
 # Changes:
 # - retrieve_data() accepts a file object, not path.
@@ -119,14 +120,16 @@ def calculate_switch(switch, fluency_list, semantic_similarity, phon_similarity,
                 fluency_list, semantic_similarity, phon_similarity, a))
 
     if switch == switch_methods[2] or switch == switch_methods[5]:
-        print("inside norms_associative if statement")
+        #print("inside norms_associative if statement")
         switch_names.append(switch_methods[2])
         switch_vecs.append(switch_norms_associative(fluency_list, norms))
-        print("back from switch_norms_associative")
+        #print("back from switch_norms_associative")
     
     if switch == switch_methods[3] or switch == switch_methods[5]:
+        #print("inside norms_associative if statement")
         switch_names.append(switch_methods[3])
         switch_vecs.append(switch_norms_categorical(fluency_list, norms))
+        #print("back from switch_norms_associative")
 
     if switch == switch_methods[4] or switch == switch_methods[5]:
         for i, r in enumerate(rise):
@@ -135,6 +138,7 @@ def calculate_switch(switch, fluency_list, semantic_similarity, phon_similarity,
                     "delta_rise={rise}_fall={fall}".format(rise=r, fall=f))
                 switch_vecs.append(switch_delta(
                     fluency_list, semantic_similarity, r, f))
+    #print("back from all")
 
     return switch_names, switch_vecs
 
@@ -155,7 +159,7 @@ def run_sims_oov(data):
     Perform only switch computations.   
     Outputs a dataframe for switch results. 
     """
-    print("Running oov sims")
+    #print("Running oov sims")
     print(data)
     
     # Get Lexical Data needed for executing methods
@@ -221,6 +225,7 @@ def run_switch(data, switch):
         lexical_results = pd.concat([lexical_results, lexical_df], ignore_index=True)
         # history_vars contains sim_list, sim_history, freq_list, freq_history,phon_list, phon_history
         switch_names, switch_vecs = calculate_switch(switch, fl_list, history_vars[0], history_vars[4], norms)
+        #print("back from calculate_switch")
     
         ## create switch results dataframe
     
