@@ -3,3 +3,5 @@ infrastructure/cdk.out
 *.pyc
 __pycache__
 Pipfile.lock
+pyproject.toml
+uv.lock

@@ -50,9 +50,11 @@ def get_data_evaluation():
     data_results = None
     #global evaluation_compiled_data # Declare evaluation_compiled_data as global variable, so we can combine outputs later
     f = request.files['filename']
-    if f: 
+    if f:
         user_oov_choice = request.form['selected-oov']
-        evaluation_message, replacement_df, data_df, data_lists_local = get_evaluation_message(f, user_oov_choice)
+        time_type = request.form.get('time-type', 'cumulative')
+        time_units = request.form.get('time-units', 's')
+        evaluation_message, replacement_df, data_df, data_lists_local = get_evaluation_message(f, user_oov_choice, time_type=time_type, time_units=time_units)
         forager_vocab = pd.read_csv("data/lexical_data/vocab.csv")
         #evaluation_compiled_data = [replacement_df, data_df, forager_vocab]
         data_results = get_data_results(evaluation_message, replacement_df, data_df, forager_vocab)
@@ -101,16 +103,25 @@ def upload_file():
 
     # Process file
     f = request.files['filename']
-    if f:  
+    if f:
+        time_type = request.form.get('time-type', 'cumulative')
+        time_units = request.form.get('time-units', 's')
+        param_mode = request.form.get('param-mode', 'grid')
+        param_values = {}
+        for key in ('alpha', 'rise', 'fall', 'beta', 'prior'):
+            val = request.form.get('param-' + key)
+            if val is not None:
+                param_values[key] = float(val)
+
         if 'selected-sims' in request.form:
             simval = request.form['selected-sims']
             oov_choice = request.form['selected-oov']
-            results = get_results(f, simval, oov_choice)
+            results = get_results(f, simval, oov_choice, time_type=time_type, time_units=time_units)
         elif 'selected-switch' in request.form:
             switch = request.form['selected-switch']
             oov_choice = request.form['selected-oov']
-            #print("switch is " + switch)
-            results = get_results(f, switch, oov_choice)
+            results = get_results(f, switch, oov_choice, time_type=time_type, time_units=time_units,
+                                  param_mode=param_mode, param_values=param_values)
         else:
             abort(400)
     else:
@@ -125,29 +136,32 @@ def upload_file():
 
 
 # Compute results files. Returns Zipfile containing outputs, or none if error.  
-def get_results(file, switch, oov_choice):
+def get_results(file, switch, oov_choice, time_type='cumulative', time_units='s', param_mode='grid', param_values=None):
 
     # Prepare data and run model for selected features
     try:
         if switch != "sims":
-            evaluation_message, replacement_df, data_df, data_lists_local = get_evaluation_message(file, oov_choice)
-            data_lists = [(str(idx), words) for idx, words in data_lists_local]
-            switch_results, lexical_results = run_switch(data_lists, switch)
+            evaluation_message, replacement_df, data_df, data_lists_local = get_evaluation_message(file, oov_choice, time_type=time_type, time_units=time_units)
+            switch_results, lexical_results = run_switch(data_lists_local, switch, param_mode=param_mode, param_values=param_values)
             ind_stats = indiv_desc_stats(lexical_results, switch_results)
             agg_stats = agg_desc_stats(switch_results)
             forager_vocab = pd.read_csv("data/lexical_data/vocab.csv")
-            
-            results = {"switch_results" : switch_results,
-                        "lexical_results" : lexical_results,
+
+            # Split switch results into separate DataFrames per method family
+            switch_family_dfs = split_switch_results(switch_results)
+
+            results = {"lexical_results" : lexical_results,
                         "individual_descriptive_stats" : ind_stats,
                         "aggregate_descriptive_stats" : agg_stats,
                        "evaluation_results": replacement_df,
                        "processed_data": data_df,
                        "forager_vocab": forager_vocab}
+            # Add each switch family as a separate result
+            for family, family_df in switch_family_dfs.items():
+                results["switch_results_" + family] = family_df
         elif switch == "sims":
-            evaluation_message, replacement_df, data_df, data_lists_local = get_evaluation_message(file, oov_choice)
-            data_lists = [(str(idx), words) for idx, words in data_lists_local]
-            sim_results = run_sims(data_lists)
+            evaluation_message, replacement_df, data_df, data_lists_local = get_evaluation_message(file, oov_choice, time_type=time_type, time_units=time_units)
+            sim_results = run_sims(data_lists_local)
             ind_stats = indiv_desc_stats(sim_results)
             forager_vocab = pd.read_csv("data/lexical_data/vocab.csv")
             results = {"lexical_results" : sim_results,
