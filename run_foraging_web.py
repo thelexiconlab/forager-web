@@ -7,23 +7,16 @@
 # - Added run_switch() and run_model_nll() containing partitioned functionality of run_model()
 # - Partitioned synthesize_results() into synthesize_all() with individual synthesize methods for switch, model, and nll
 
-import sys
-from scipy.optimize import fmin
-from forager.foraging import forage
 from forager.switch import switch_delta, switch_multimodal, switch_simdrop, switch_norms_associative, switch_norms_categorical, switch_slope_difference, switch_pei
 from forager.cues import create_history_variables, get_oov_sims
 from forager.utils import evaluate_web_data
 import pandas as pd
 import numpy as np
-from scipy.optimize import fmin
 import os
 from tqdm import tqdm
 
 #import tensorflow as tf
-
 #import tensorflow_hub as hub
-import re
-from alive_progress import alive_bar 
 
 """
 """
@@ -37,25 +30,6 @@ phonpath = 'data/lexical_data/USE_phonological_matrix.csv'
 
 # Global Variables
 switch_methods = ['simdrop','multimodal','norms_associative', 'norms_categorical', 'delta', 'slope_difference', 'pei', 'all']
-
-# Method family names (without 'all') used to group switch results into separate files
-_switch_families = [m for m in switch_methods if m != 'all']
-
-def _get_switch_family(method_name):
-    """Extract the method family from a Switch_Method string (e.g. 'pei_alpha=0.5_beta=0.3_prior=0.5' -> 'pei')."""
-    for family in sorted(_switch_families, key=len, reverse=True):
-        if method_name == family or method_name.startswith(family + '_'):
-            return family
-    return method_name
-
-def split_switch_results(switch_results):
-    """Split switch results DataFrame into a dict of {family_name: DataFrame}."""
-    switch_results = switch_results.copy()
-    switch_results['_family'] = switch_results['Switch_Method'].apply(_get_switch_family)
-    result = {}
-    for family, group in switch_results.groupby('_family'):
-        result[family] = group.drop(columns=['_family'])
-    return result
 
 # Methods
 
@@ -161,10 +135,17 @@ def calculate_switch(switch, fluency_list, semantic_similarity, phon_similarity,
                 switch_vecs.append(switch_delta(
                     fluency_list, semantic_similarity, r, f))
 
+    # Precompute slope differences once (used by slope_difference, PEI, and lexical output)
+    precomputed_slope_diffs = None
+    if times is not None:
+        _, precomputed_slope_diffs = switch_slope_difference(fluency_list, times)
+
     if switch == 'slope_difference' or run_all:
         if times is not None:
             switch_names.append("slope_difference")
-            decisions, _ = switch_slope_difference(fluency_list, times)
+            decisions = [2]
+            for i in range(len(precomputed_slope_diffs)):
+                decisions.append(1 if precomputed_slope_diffs[i] < 0 else 0)
             switch_vecs.append(decisions)
 
     if switch == 'pei' or run_all:
@@ -173,9 +154,9 @@ def calculate_switch(switch, fluency_list, semantic_similarity, phon_similarity,
                 for j, b in enumerate(pei_beta):
                     for k, p in enumerate(pei_prior):
                         switch_names.append("pei_alpha={alpha}_beta={beta}_prior={prior}".format(alpha=a, beta=b, prior=p))
-                        switch_vecs.append(switch_pei(fluency_list, times, semantic_similarity, phon_similarity, alpha=a, beta=b, prior_probability=p))
+                        switch_vecs.append(switch_pei(fluency_list, times, semantic_similarity, phon_similarity, slope_diffs=precomputed_slope_diffs, alpha=a, beta=b, prior_probability=p))
 
-    return switch_names, switch_vecs
+    return switch_names, switch_vecs, precomputed_slope_diffs
 
 
 def output_results(results, dname, dpath='output', sep=','):
@@ -280,10 +261,30 @@ def run_switch(data, switch, param_mode='grid', param_values=None):
         lexical_df['Frequency_Value'] = history_vars[2]
         lexical_df['Phonological_Similarity'] = history_vars[4]
 
-        lexical_results = pd.concat([lexical_results, lexical_df], ignore_index=True)
+        # Add timing columns if timing data is available
+        if times is not None:
+            cumulative = np.array(times)
+            lexical_df['Cumulative_IRT'] = cumulative
+            irt = np.empty(len(cumulative))
+            irt[0] = cumulative[0]
+            irt[1:] = np.diff(cumulative)
+            lexical_df['IRT'] = irt
+
         # history_vars contains sim_list, sim_history, freq_list, freq_history,phon_list, phon_history
-        switch_names, switch_vecs = calculate_switch(switch, fl_list, history_vars[0], history_vars[4], norms, times=times,
+        switch_names, switch_vecs, slope_diffs = calculate_switch(switch, fl_list, history_vars[0], history_vars[4], norms, times=times,
                                                      alpha=alpha, rise=rise, fall=fall, pei_beta=pei_beta, pei_prior=pei_prior)
+
+        # Add slope differences to lexical results (from precomputed values)
+        if times is not None:
+            sd_col = np.empty(len(fl_list))
+            sd_col[0] = np.nan
+            if slope_diffs is not None and len(slope_diffs) > 0:
+                sd_col[1:] = slope_diffs
+            else:
+                sd_col[1:] = np.nan
+            lexical_df['Slope_Difference'] = sd_col
+
+        lexical_results = pd.concat([lexical_results, lexical_df], ignore_index=True)
 
         ## create switch results dataframe
 

@@ -147,18 +147,13 @@ def get_results(file, switch, oov_choice, time_type='cumulative', time_units='s'
             agg_stats = agg_desc_stats(switch_results)
             forager_vocab = pd.read_csv("data/lexical_data/vocab.csv")
 
-            # Split switch results into separate DataFrames per method family
-            switch_family_dfs = split_switch_results(switch_results)
-
             results = {"lexical_results" : lexical_results,
+                        "switch_results" : switch_results,
                         "individual_descriptive_stats" : ind_stats,
                         "aggregate_descriptive_stats" : agg_stats,
                        "evaluation_results": replacement_df,
                        "processed_data": data_df,
                        "forager_vocab": forager_vocab}
-            # Add each switch family as a separate result
-            for family, family_df in switch_family_dfs.items():
-                results["switch_results_" + family] = family_df
         elif switch == "sims":
             evaluation_message, replacement_df, data_df, data_lists_local = get_evaluation_message(file, oov_choice, time_type=time_type, time_units=time_units)
             sim_results = run_sims(data_lists_local)

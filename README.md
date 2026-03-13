@@ -71,7 +71,7 @@ For methods with parameters (multimodal, delta, PEI), you can either set specifi
 
 Results are returned as a zip file containing:
 - `switch_results_<method>.csv` — one CSV per switch method family with switch designations
-- `lexical_results.csv` — semantic similarity, phonological similarity, and frequency values
+- `lexical_results.csv` — semantic similarity, phonological similarity, and frequency values. When timing data is provided, also includes cumulative response time (`Cumulative_IRT`), inter-response time (`IRT`), and slope difference (`Slope_Difference`)
 - `individual_descriptive_stats.csv` — individual-level statistics
 - `aggregate_descriptive_stats.csv` — group-level statistics
 - `evaluation_results.csv` — details on OOV word handling (replacements, exclusions, truncations)
