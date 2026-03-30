@@ -180,6 +180,8 @@
                 var payload = new FormData();
                 payload.append('filename', file);
                 payload.append('selected-oov', oov_choice);
+                payload.append('time-type', $scope.timeType || 'cumulative');
+                payload.append('time-units', $scope.timeUnits || 's');
 
                 var requestBody = {
                     url: 'evaluate-data',
@@ -249,11 +251,21 @@
                 if(selectedOption === 'get-sims' && $scope.OOVchoice !== 'process'){
                     payload.append('selected-sims', 'sims');
                     payload.append('selected-oov', $scope.OOVchoice);
-                } 
+                }
                 else if(selectedOption === 'get-switch'){
                     payload.append('selected-switch', selectedSwitch);
                     payload.append('selected-oov', $scope.OOVchoice);
+                    payload.append('param-mode', $scope.paramMode || 'grid');
+                    if ($scope.paramMode === 'specific') {
+                        if ($scope.paramAlpha !== undefined) payload.append('param-alpha', $scope.paramAlpha);
+                        if ($scope.paramRise !== undefined) payload.append('param-rise', $scope.paramRise);
+                        if ($scope.paramFall !== undefined) payload.append('param-fall', $scope.paramFall);
+                        if ($scope.paramBeta !== undefined) payload.append('param-beta', $scope.paramBeta);
+                        if ($scope.paramPrior !== undefined) payload.append('param-prior', $scope.paramPrior);
+                    }
                 }
+                payload.append('time-type', $scope.timeType || 'cumulative');
+                payload.append('time-units', $scope.timeUnits || 's');
 
                 var payloadUrl = "/run-model" 
 
@@ -347,8 +359,63 @@
                         <option value="simdrop">Similarity-drop</option>
                         <option value="delta">Delta Similarity</option>
                         <option value="multimodal">Multimodal Similarity-drop</option>
+                        <option value="slope_difference">Slope Difference</option>
+                        <option value="pei">Probabilistic Evidence Integration (PEI)</option>
                         <option value="all">all</option>
                     </select>
+
+                    <div ng-show="selectedSwitch === 'slope_difference' || selectedSwitch === 'pei' || selectedSwitch === 'all'" style="margin-top: 10px;">
+                        <p><b>Timing data options</b> (required for Slope Difference and PEI methods):</p>
+                        <label>Time type:
+                            <select ng-model="timeType" ng-init="timeType='cumulative'">
+                                <option value="cumulative">Cumulative</option>
+                                <option value="irt">Inter-response time (IRT)</option>
+                            </select>
+                        </label>
+                        <label style="margin-left: 15px;">Time units:
+                            <select ng-model="timeUnits" ng-init="timeUnits='s'">
+                                <option value="s">Seconds</option>
+                                <option value="ms">Milliseconds</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div ng-show="selectedSwitch === 'multimodal' || selectedSwitch === 'delta' || selectedSwitch === 'pei'" style="margin-top: 10px;">
+                        <p><b>Parameter mode:</b></p>
+                        <label>
+                            <input type="radio" ng-model="paramMode" ng-init="paramMode='specific'" value="specific"> Specific values
+                        </label>
+                        <label style="margin-left: 15px;">
+                            <input type="radio" ng-model="paramMode" value="grid"> Grid search
+                        </label>
+
+                        <div ng-show="paramMode === 'specific'" style="margin-top: 8px;">
+                            <div ng-show="selectedSwitch === 'multimodal'">
+                                <label>Alpha (0–1):
+                                    <input type="number" ng-model="paramAlpha" ng-init="paramAlpha=0.5" min="0" max="1" step="0.1" style="width: 70px;">
+                                </label>
+                            </div>
+                            <div ng-show="selectedSwitch === 'delta'">
+                                <label>Rise threshold (0–1):
+                                    <input type="number" ng-model="paramRise" ng-init="paramRise=0.5" min="0" max="1" step="0.25" style="width: 70px;">
+                                </label>
+                                <label style="margin-left: 15px;">Fall threshold (0–1):
+                                    <input type="number" ng-model="paramFall" ng-init="paramFall=0.5" min="0" max="1" step="0.25" style="width: 70px;">
+                                </label>
+                            </div>
+                            <div ng-show="selectedSwitch === 'pei'">
+                                <label>Alpha (0–1):
+                                    <input type="number" ng-model="paramAlpha" ng-init="paramAlpha=0.8" min="0" max="1" step="0.1" style="width: 70px;">
+                                </label>
+                                <label style="margin-left: 15px;">Beta (0–1):
+                                    <input type="number" ng-model="paramBeta" ng-init="paramBeta=0.5" min="0" max="1" step="0.1" style="width: 70px;">
+                                </label>
+                                <label style="margin-left: 15px;">Prior (0.1–0.9):
+                                    <input type="number" ng-model="paramPrior" ng-init="paramPrior=0.5" min="0.1" max="0.9" step="0.1" style="width: 70px;">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
             
@@ -356,9 +423,7 @@
             <div ng-show="(selectedOption === 'get-sims') || (selectedOption === 'get-switch' && selectedSwitch !== '')">
                 
                 <h3>Upload your data</h3>
-                <p>Upload data as a tab-delimited .txt or CSV file, with column headers for subject ID and words. Please review the <a href="docs">docs</a> page to understand the file formats <i>forager</i> accepts. <br> <br>
-                    <b>Please note</b>: If your data has 3 columns, forager will automatically treat the third column as a timepoint.
-                    If you do not want this, please remove the third column before uploading.
+                <p>Upload data as a delimited .txt or CSV file with column headers. Columns are detected by name (case-insensitive). Required: <b>SID</b> (or subject, participant, id) and <b>entry</b> (or item, word, response). Optional: <b>timepoint</b> (to group multiple fluency lists per subject, e.g. different sessions or categories), <b>time</b> (or rt, response_time — cumulative response times for timing-based methods). Please review the <a href="docs">docs</a> page for more details.
                 </p>
             
                 <label class="custom-file-input-label">

@@ -7,23 +7,16 @@
 # - Added run_switch() and run_model_nll() containing partitioned functionality of run_model()
 # - Partitioned synthesize_results() into synthesize_all() with individual synthesize methods for switch, model, and nll
 
-import sys
-from scipy.optimize import fmin
-from forager.foraging import forage
-from forager.switch import switch_delta, switch_multimodal, switch_simdrop, switch_norms_associative, switch_norms_categorical
+from forager.switch import switch_delta, switch_multimodal, switch_simdrop, switch_norms_associative, switch_norms_categorical, switch_slope_difference, switch_pei
 from forager.cues import create_history_variables, get_oov_sims
 from forager.utils import evaluate_web_data
 import pandas as pd
 import numpy as np
-from scipy.optimize import fmin
 import os
 from tqdm import tqdm
 
 #import tensorflow as tf
-
 #import tensorflow_hub as hub
-import re
-from alive_progress import alive_bar 
 
 """
 """
@@ -36,21 +29,21 @@ frequencypath = 'data/lexical_data/USE_frequencies.csv'
 phonpath = 'data/lexical_data/USE_phonological_matrix.csv'
 
 # Global Variables
-switch_methods = ['simdrop','multimodal','norms_associative', 'norms_categorical', 'delta','all']
+switch_methods = ['simdrop','multimodal','norms_associative', 'norms_categorical', 'delta', 'slope_difference', 'pei', 'all']
 
 # Methods
 
 
-def get_evaluation_message(file, oov_choice='exclude'):
+def get_evaluation_message(file, oov_choice='exclude', time_type='cumulative', time_units='s'):
     """
-    Returns text feedback on replacements and truncations that would be made within data. 
-    Returns error message if evaluation was not successful. 
+    Returns text feedback on replacements and truncations that would be made within data.
+    Returns error message if evaluation was not successful.
     """
     message = ""
 
     try:
 
-        data_df, replacement_df, data_lists = evaluate_web_data(file, oov_choice = oov_choice)
+        data_df, replacement_df, data_lists = evaluate_web_data(file, oov_choice=oov_choice, time_type=time_type, time_units=time_units)
         
     
         exclude_count = (replacement_df["evaluation"] == "EXCLUDE").sum()    
@@ -59,9 +52,14 @@ def get_evaluation_message(file, oov_choice='exclude'):
         replacement_count = (replacement_df["evaluation"] == "REPLACE").sum()
         
 
-        # if data_df has 3 columns, then it has timepoint, tell them that
-        if (len(data_df.columns) == 3):
-            message += "Your data has been evaluated. We found 3 columns in your data, so we will treat the first column as the subject ID, the second column as the fluency list, and the third column as the timepoint. \n "
+        # inform user about detected columns
+        detected_cols = list(data_df.columns)
+        if 'timepoint' in detected_cols and 'time' in detected_cols:
+            message += "We detected columns: SID, entry, timepoint, and time (timing data). \n "
+        elif 'time' in detected_cols:
+            message += "We detected columns: SID, entry, and time (timing data). \n "
+        elif 'timepoint' in detected_cols:
+            message += "We detected columns: SID, entry, and timepoint. \n "
         
         if (replacement_count + trunc_count + exclude_count + unk_count == 0):
             message += "Congrats! We have found all items from your data in our vocabulary."
@@ -95,11 +93,11 @@ def get_lexical_data():
     labels = pd.read_csv(frequencypath, header=None)[0].values.tolist()
     return norms, similarity_matrix, phon_matrix, frequency_list, labels
 
-def calculate_switch(switch, fluency_list, semantic_similarity, phon_similarity, norms, alpha=np.arange(0, 1.1, 0.1), rise=np.arange(0, 1.25, 0.25), fall=np.arange(0, 1.25, 0.25)):
+def calculate_switch(switch, fluency_list, semantic_similarity, phon_similarity, norms, times=None, alpha=np.arange(0, 1.1, 0.1), rise=np.arange(0, 1.25, 0.25), fall=np.arange(0, 1.25, 0.25), pei_beta=np.arange(0, 1.1, 0.1), pei_prior=np.arange(0.1, 1.0, 0.1)):
     '''
     1. Check if specified switch model is valid
     2. Return set of switches, including parameter value, if required
-    switch_methods = ['simdrop','multimodal','norms_associative', 'norms_categorical', 'delta','all']
+    switch_methods = ['simdrop','multimodal','norms_associative', 'norms_categorical', 'delta', 'slope_difference', 'pei', 'all']
     '''
     switch_names = []
     switch_vecs = []
@@ -109,38 +107,56 @@ def calculate_switch(switch, fluency_list, semantic_similarity, phon_similarity,
             switch=switch_methods)
         raise Exception(ex_str)
 
-    if switch == switch_methods[0] or switch == switch_methods[5]:
-        switch_names.append(switch_methods[0])
+    run_all = switch == 'all'
+
+    if switch == 'simdrop' or run_all:
+        switch_names.append('simdrop')
         switch_vecs.append(switch_simdrop(fluency_list, semantic_similarity))
 
-    if switch == switch_methods[1] or switch == switch_methods[5]:
+    if switch == 'multimodal' or run_all:
         for i, a in enumerate(alpha):
             switch_names.append('multimodal_alpha={alpha}'.format(alpha=a))
             switch_vecs.append(switch_multimodal(
                 fluency_list, semantic_similarity, phon_similarity, a))
 
-    if switch == switch_methods[2] or switch == switch_methods[5]:
-        #print("inside norms_associative if statement")
-        switch_names.append(switch_methods[2])
+    if switch == 'norms_associative' or run_all:
+        switch_names.append('norms_associative')
         switch_vecs.append(switch_norms_associative(fluency_list, norms))
-        #print("back from switch_norms_associative")
-    
-    if switch == switch_methods[3] or switch == switch_methods[5]:
-        #print("inside norms_associative if statement")
-        switch_names.append(switch_methods[3])
-        switch_vecs.append(switch_norms_categorical(fluency_list, norms))
-        #print("back from switch_norms_associative")
 
-    if switch == switch_methods[4] or switch == switch_methods[5]:
+    if switch == 'norms_categorical' or run_all:
+        switch_names.append('norms_categorical')
+        switch_vecs.append(switch_norms_categorical(fluency_list, norms))
+
+    if switch == 'delta' or run_all:
         for i, r in enumerate(rise):
             for j, f in enumerate(fall):
                 switch_names.append(
                     "delta_rise={rise}_fall={fall}".format(rise=r, fall=f))
                 switch_vecs.append(switch_delta(
                     fluency_list, semantic_similarity, r, f))
-    #print("back from all")
 
-    return switch_names, switch_vecs
+    # Precompute slope differences once (used by slope_difference, PEI, and lexical output)
+    precomputed_slope_diffs = None
+    if times is not None:
+        _, precomputed_slope_diffs = switch_slope_difference(fluency_list, times)
+
+    if switch == 'slope_difference' or run_all:
+        if times is not None:
+            switch_names.append("slope_difference")
+            decisions = [2]
+            for i in range(len(precomputed_slope_diffs)):
+                decisions.append(1 if precomputed_slope_diffs[i] < 0 else 0)
+            switch_vecs.append(decisions)
+
+    if switch == 'pei' or run_all:
+        if times is not None:
+            for i, a in enumerate(alpha):
+                for j, b in enumerate(pei_beta):
+                    for k, p in enumerate(pei_prior):
+                        switch_names.append("pei_alpha={alpha}_beta={beta}_prior={prior}".format(alpha=a, beta=b, prior=p))
+                        switch_vecs.append(switch_pei(fluency_list, times, semantic_similarity, phon_similarity, slope_diffs=precomputed_slope_diffs, alpha=a, beta=b, prior_probability=p))
+
+    return switch_names, switch_vecs, precomputed_slope_diffs
 
 
 def output_results(results, dname, dpath='output', sep=','):
@@ -167,7 +183,8 @@ def run_sims_oov(data):
     outputs = []
 
     # Run through each fluency list in dataset
-    for i, (subj, fl_list) in enumerate(tqdm(data)):
+    for entry in tqdm(data):
+        subj, fl_list = entry[0], entry[1]
         print(fl_list)
         # Get History Variables
         history_vars = get_oov_sims(
@@ -181,13 +198,14 @@ def run_sims_oov(data):
 def run_sims(data):
 
     """
-    Perform only switch computations.   
-    Outputs a dataframe for switch results. 
+    Perform only switch computations.
+    Outputs a dataframe for switch results.
     """
     # Get Lexical Data needed for executing methods
     norms, similarity_matrix, phon_matrix, frequency_list, labels = get_lexical_data()
     lexical_results = []
-    for i, (subj, fl_list) in enumerate(tqdm(data)):
+    for entry in tqdm(data):
+        subj, fl_list = entry[0], entry[1]
         history_vars = create_history_variables(fl_list, labels, similarity_matrix, frequency_list, phon_matrix)
         # history_vars contains sim_list, sim_history, freq_list, freq_history,phon_list, phon_history
         lexical_df = pd.DataFrame()
@@ -200,19 +218,40 @@ def run_sims(data):
     lexical_results = pd.concat(lexical_results,ignore_index=True)
     return lexical_results
 
-def run_switch(data, switch):
+def run_switch(data, switch, param_mode='grid', param_values=None):
     """
-    Perform only switch computations.   
-    Outputs a dataframe for switch results. 
+    Perform only switch computations.
+    Outputs a dataframe for switch results.
     """
-    
+
     norms, similarity_matrix, phon_matrix, frequency_list, labels = get_lexical_data()
+
+    # Build parameter arrays based on mode
+    if param_mode == 'specific' and param_values and switch != 'all':
+        alpha = np.array([param_values.get('alpha', 0.5)])
+        rise = np.array([param_values.get('rise', 0.5)])
+        fall = np.array([param_values.get('fall', 0.5)])
+        pei_beta = np.array([param_values.get('beta', 0.5)])
+        pei_prior = np.array([param_values.get('prior', 0.5)])
+    else:
+        alpha = np.arange(0, 1.1, 0.1)
+        rise = np.arange(0, 1.25, 0.25)
+        fall = np.arange(0, 1.25, 0.25)
+        pei_beta = np.arange(0, 1.1, 0.1)
+        pei_prior = np.arange(0.1, 1.0, 0.1)
+
     switch_results = pd.DataFrame()
     lexical_results = pd.DataFrame()
-    for i, (subj, fl_list) in enumerate(tqdm(data)):
-        
+    for entry in tqdm(data):
+        # Unpack with optional timing data
+        if len(entry) == 3:
+            subj, fl_list, times = entry
+        else:
+            subj, fl_list = entry
+            times = None
+
         history_vars = create_history_variables(fl_list, labels, similarity_matrix, frequency_list, phon_matrix)
-        
+
         ## create lexical results dataframe
 
         lexical_df = pd.DataFrame()
@@ -222,13 +261,33 @@ def run_switch(data, switch):
         lexical_df['Frequency_Value'] = history_vars[2]
         lexical_df['Phonological_Similarity'] = history_vars[4]
 
-        lexical_results = pd.concat([lexical_results, lexical_df], ignore_index=True)
+        # Add timing columns if timing data is available
+        if times is not None:
+            cumulative = np.array(times)
+            lexical_df['Cumulative_IRT'] = cumulative
+            irt = np.empty(len(cumulative))
+            irt[0] = cumulative[0]
+            irt[1:] = np.diff(cumulative)
+            lexical_df['IRT'] = irt
+
         # history_vars contains sim_list, sim_history, freq_list, freq_history,phon_list, phon_history
-        switch_names, switch_vecs = calculate_switch(switch, fl_list, history_vars[0], history_vars[4], norms)
-        #print("back from calculate_switch")
-    
+        switch_names, switch_vecs, slope_diffs = calculate_switch(switch, fl_list, history_vars[0], history_vars[4], norms, times=times,
+                                                     alpha=alpha, rise=rise, fall=fall, pei_beta=pei_beta, pei_prior=pei_prior)
+
+        # Add slope differences to lexical results (from precomputed values)
+        if times is not None:
+            sd_col = np.empty(len(fl_list))
+            sd_col[0] = np.nan
+            if slope_diffs is not None and len(slope_diffs) > 0:
+                sd_col[1:] = slope_diffs
+            else:
+                sd_col[1:] = np.nan
+            lexical_df['Slope_Difference'] = sd_col
+
+        lexical_results = pd.concat([lexical_results, lexical_df], ignore_index=True)
+
         ## create switch results dataframe
-    
+
         switch_df = pd.DataFrame()
         for j, switch_val in enumerate(switch_vecs):
             df = pd.DataFrame()
@@ -237,9 +296,9 @@ def run_switch(data, switch):
             df['Switch_Value'] = switch_val
             df['Switch_Method'] = switch_names[j]
             switch_df = pd.concat([switch_df, df], ignore_index=True)
-    
+
         switch_results = pd.concat([switch_results, switch_df], ignore_index=True)
-    
+
     return switch_results, lexical_results
 
 def synthesize_sim_results(outputs):
