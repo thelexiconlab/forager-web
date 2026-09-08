@@ -25,7 +25,7 @@ urllib3 = "<2"
 requests = "<2.30.0"
 #tensorflow = "*"
 #tensorflow_hub = "*"
-alive_progress = "*"
+alive_progress = "3.2"
 
 [dev-packages]
 aws-cdk-lib = ">=2.0.0"
