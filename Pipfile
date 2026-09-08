@@ -36,4 +36,4 @@ pytest = "*"
 
 # Don't uncomment: This is a reminder that AWS AppRunner uses Python 3.8
 #[requires]
-#python_version = "3.8"
+#python_version = "3.11"
