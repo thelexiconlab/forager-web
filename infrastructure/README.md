@@ -36,4 +36,4 @@ AppRunner will check the health of the deployed application and roll back to the
 
 The initial environment is created through the AWS Cloud Development Kit (AWS CDK). The code for the CDK is in the `infrastructure.py` file with variable options set in the `cdk.json` file. A `deploy.sh` script is included to assist in remembering the command(s) to update or deploy new infrastructure.
 
-The only difference between `infrastructure.py` and the delpoyed infrastructure is a manual change in the AWS console to *automatic deployment*. The AWS CDK has no option to configure this (as of 3/6/2023) and *manual deployment* is the default.
+The only difference between `infrastructure.py` and the deployed infrastructure is a manual change in the AWS console to *automatic deployment*. The AWS CDK has no option to configure this (as of 3/6/2023) and *manual deployment* is the default.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Forager Web Infrastructure AWS
-# 
+#
 # The following are the components of the supporting infrastructure
 # - VPC and 2 public subnets for application
 #
@@ -18,8 +18,8 @@ from aws_cdk import (
 
 from constructs import Construct
 
-BUILD_COMMAND='pip install pipenv && pipenv install'
-START_COMMAND='pipenv run gunicorn -w 4 --bind 0.0.0.0:8080 --access-logfile=- --timeout=1800 application:application'
+BUILD_COMMAND='pip3 install pipenv && pipenv lock && pipenv requirements > requirements.txt && pip3 install --target /app/deps -r requirements.txt'
+START_COMMAND='python3 -m gunicorn.app.wsgiapp -w 1 --preload --bind 0.0.0.0:8080 --access-logfile=- --timeout=1800 application:application'
 
 class SimpleDBStack(Stack):
     def __init__(self, scope:Construct, id:str,
@@ -65,6 +65,9 @@ class SimpleDBStack(Stack):
                     runtime=apprunner.Runtime.PYTHON_3,
                     start_command=START_COMMAND,
                     build_command=BUILD_COMMAND,
+                    environment_variables = {
+                        "PYTHONPATH": "/app/deps"
+                    },
                 )
             )
         )
@@ -97,7 +100,7 @@ for tag, value in get_context('tags').items():
 #Tags.of(app).add('project', get_context('project'))
 
 SimpleDBStack(app, get_context('name'),
-    env={ "region": get_context('region'), "account": get_context('account') }, 
+    env={ "region": get_context('region'), "account": get_context('account') },
     description=get_context('description'),
     vpc_name=get_context('vpc_name'),
     github_connection_arn=get_context('github_connection_arn'),
