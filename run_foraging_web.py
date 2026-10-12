@@ -235,7 +235,7 @@ def check_param_values(switch, param_mode, param_values):
     """
     Returns an error message if the parameter values needed by the selected switch method in
     'specific' mode are missing or out of range, or None if they are valid.
-    alpha, beta, rise and fall must be in [0, 1]; prior must be in (0, 1).
+    alpha, beta, rise and fall must be in [0, 1]; prior must be in [0.1, 0.9] (the range of the grid).
     Grid mode and methods without parameters (including 'all', which always uses the grids) need no values.
     """
     if param_mode not in ('grid', 'specific'):
@@ -248,8 +248,8 @@ def check_param_values(switch, param_mode, param_values):
         if value is None:
             return "Missing value for parameter '{}', which the {} method needs when specific values are selected.".format(key, switch)
         if key == 'prior':
-            if not 0 < value < 1:
-                return "Parameter 'prior' must be greater than 0 and less than 1 (got {}).".format(value)
+            if not 0.1 <= value <= 0.9:
+                return "Parameter 'prior' must be between 0.1 and 0.9 (got {}).".format(value)
         elif not 0 <= value <= 1:
             return "Parameter '{}' must be between 0 and 1 (got {}).".format(key, value)
     return None

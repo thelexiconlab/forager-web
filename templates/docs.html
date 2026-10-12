@@ -10,7 +10,7 @@
 <p>This page contains more information about the key components of <i>forager:</i> <a href="#data">data</a>, the <a href="#oov">default policy for handling out-of-vocabulary words</a>, <a href="#switch">switch methods</a>, <a href="#models">models</a>, and <a href=#out>outputs</a>. </p>
 </div>
 <h2 id="data"> data </h2>
-<p>To use forager on one’s own data, the user needs to upload a <b>single text/CSV file of fluency lists</b>  with two columns <b>(with headers)</b>: 
+<p>To use forager on one’s own data, the user needs to upload a <b>single text/CSV file of fluency lists</b> with at least two columns <b>(with headers)</b>: 
 one for the participant identifier and one for the item they produced. For example, if participant 1 had 
 30 response items, there would be 30 rows with “1” in the first column, one for each item in their fluency list.
 The rows should be separated by a newline, and the columns should be separated by the same delimiter throughout 
@@ -32,20 +32,23 @@ for the “animals” category and the web interface works for this category. Ho
 acceptable words and corresponding semantic embeddings for that category and derive the necessary frequency and similarity 
 data using the functions provided in the package or via the Colab interface. </p>
 
-<p><b>Please note:</b> If your file has a third column, forager will automatically assume that it is a timepoint, and will treat
-  the data from a given participant separated by timepoints. For example, if the file has the following format: </p>
+<p><b>Please note:</b> Columns are identified by their header name (case-insensitive), not by their position:</p>
+  <ul>
+    <li><b>SID</b> (or <i>id</i>, <i>subject</i>, <i>participant</i>): participant identifier. Required.</li>
+    <li><b>entry</b> (or <i>item</i>, <i>word</i>, <i>response</i>): the item produced. Required.</li>
+    <li><b>timepoint</b>: optional. forager treats the data from a given participant as separate lists, one per timepoint (e.g., different sessions).</li>
+    <li><b>time</b> (or <i>rt</i>, <i>response_time</i>): optional response time of each item. Required for the slope difference and PEI switch methods. Times can be cumulative (time since the start of the task) or inter-response times, in seconds or milliseconds; select the format on the main page.</li>
+  </ul>
+  <p>For example, the following file has two lists for participant 1 (timepoints 1 and 2) and cumulative response times in seconds:</p>
 
   <pre>
-    SID entry time
-    1 bat 1
-    1 cat 1 
-    1 horse 2
-    2 dog 1
-    2 hamster 2
+    SID entry timepoint time
+    1 bat 1 2.1
+    1 cat 1 4.3
+    1 horse 2 1.8
+    1 dog 2 5.0
+    2 hamster 1 3.2
   </pre>
-
-  In this case, forager will treat the data from participant 1 as two separate lists, one for timepoint 1 and one for timepoint 2. 
-  If you do not want this behavior, please remove the time column from your file before uploading it to forager.
 
 <h2 id="oov"> handling out-of-vocabulary (OOV) words </h2>
 
@@ -68,7 +71,7 @@ This policy allows correcting for minor variants, plurals, and spelling errors w
 
 <h2 id="switch">switch methods</h2>
 
-<p>forager provides five different methods for determining clusters and switches in a fluency list: 
+<p>forager provides seven different methods for determining clusters and switches in a fluency list: 
   <ol>
     <li><b>Norm-based</b>, based on the hand-coded norms of animal subcategories created by Troyer et al. (1997; e.g., pets, aquatic animals, etc.) and subsequently extended by Lundin et al. (2022) and Zemla et al. (2020). There are two norm-based methods provided (based on Hills et al. 2015): </li> 
       <ul>
@@ -76,9 +79,13 @@ This policy allows correcting for minor variants, plurals, and spelling errors w
         <li>Norm-based categorical search: This method assigns switches based on overall shifts from one category to another </li>
       </ul>
     <li><b>Similarity-drop</b>, based on the heuristic used by Hills et al. (2012), where a switch is predicted if there is a drop in semantic similarity between consecutive items followed by an immediate rise in semantic similarity</li>
-    <li><b>Delta similarity</b>, based on Lundin et al. (2022), where switches and clusters depend on whether a rise or drop in semantic similarity exceeds specific thresholds, and </li>
-    <li><b>Multimodal similarity drop</b>, where the similarity between consecutive items is a weighted sum of the semantic and phonological similarity, and switches correspond to drops in semantic-phonological similarity.</li>
+    <li><b>Delta similarity</b>, based on Lundin et al. (2022), where switches and clusters depend on whether a rise or drop in semantic similarity exceeds specific thresholds (rise and fall thresholds, 0–1), </li>
+    <li><b>Multimodal similarity drop</b>, where the similarity between consecutive items is a weighted sum of the semantic and phonological similarity (alpha, 0–1, is the weight of semantic similarity), and switches correspond to drops in semantic-phonological similarity, </li>
+    <li><b>Slope difference</b>, following Bushnell et al. (2022), which fits an exponential curve to the cumulative number of items produced over time. A switch is predicted when the observed retrieval rate between two consecutive items is lower than the rate predicted by the curve. This method requires response times, and </li>
+    <li><b>Probabilistic Evidence Integration (PEI)</b>, which combines similarity and timing evidence. Similarity evidence is the weighted sum of semantic and phonological similarity (alpha, 0–1, is the weight of semantic similarity), and timing evidence is the slope difference described above; both are standardized within each list (robust z-scores). The two are combined in log-odds space, weighted by beta (0–1, the weight of similarity versus timing evidence), starting from a prior probability of clustering (prior, 0.1–0.9). The result is the posterior probability that each item continues a cluster, P(cluster); an item is a switch when P(cluster) &lt; 0.5. This method requires response times.</li>
   </ol>
+
+  <p>For the methods with parameters (multimodal similarity drop, delta similarity, and PEI), the main page lets the user either enter specific parameter values or run a grid search over all combinations of alpha and beta from 0 to 1 in steps of 0.1, prior from 0.1 to 0.9 in steps of 0.1, and rise and fall thresholds from 0 to 1 in steps of 0.25. When <i>all</i> methods are selected, the grid search is always used.</p>
 
   The file <code>switch_results.csv</code> will contain the item-level cluster/switch designations for each method (see <a href="#out">outputs</a> for details).
 
@@ -121,7 +128,7 @@ This policy allows correcting for minor variants, plurals, and spelling errors w
     <li>
       <strong>Get Lexical Values</strong>: If the user selects this option, the following files will be available for download via a <code>.zip</code> file:
       <ul>
-        <li><code>lexical_results.csv</code>: This file contains item-wise lexical metrics (semantic similarity, phonological similarity, and word frequency). The semantic and phonological similarities indicate the similarity between the previous item and current item (the first item will have an arbitrary value of .0001), whereas the frequency values indicate the frequency of the current item in the English language (obtained via Google N-grams).</li>
+        <li><code>lexical_results.csv</code>: This file contains item-wise lexical metrics (semantic similarity, phonological similarity, and word frequency). The semantic and phonological similarities indicate the similarity between the previous item and current item (the first item will have an arbitrary value of .0001), whereas the frequency values indicate the frequency of the current item in the English language (obtained via Google N-grams). When response times are provided, this file also contains the cumulative response time (<code>Cumulative_IRT</code>), the inter-response time (<code>IRT</code>), and the slope difference (<code>Slope_Difference</code>; empty for the first item) for each item.</li>
         <li><code>individual_descriptive_stats.csv</code>: This file contains some aggregate metrics at the participant level such as total number of items produced, as well as means/SDs of semantic similarity, phonological similarity, and word frequency.</li>
         <li>The three files from the evaluation phase (see <a href="#oov">handling OOV words</a> for details).</li>
       </ul>
