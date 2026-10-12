@@ -65,6 +65,37 @@
 
             $scope.OOVchoice = ''; // Initialize the selected OOV choice
 
+            // Specific parameter values needed by each parametric switch method, with their valid ranges
+            var paramSpecs = {
+                multimodal: [{model: 'paramMmAlpha', key: 'alpha', label: 'Alpha', min: 0, max: 1}],
+                delta: [{model: 'paramRise', key: 'rise', label: 'Rise threshold', min: 0, max: 1},
+                        {model: 'paramFall', key: 'fall', label: 'Fall threshold', min: 0, max: 1}],
+                pei: [{model: 'paramPeiAlpha', key: 'alpha', label: 'Alpha', min: 0, max: 1},
+                      {model: 'paramBeta', key: 'beta', label: 'Beta', min: 0, max: 1},
+                      {model: 'paramPrior', key: 'prior', label: 'Prior', min: 0.1, max: 0.9}]
+            };
+
+            $scope.usesSpecificParams = function () {
+                return $scope.paramMode === 'specific' && paramSpecs.hasOwnProperty($scope.selectedSwitch);
+            };
+
+            // Returns a message if a specific value is missing or out of range (AngularJS sets the
+            // model of an invalid number input to undefined, or null when empty), or '' if all are valid
+            $scope.paramError = function () {
+                if (!$scope.usesSpecificParams()) {
+                    return '';
+                }
+                var specs = paramSpecs[$scope.selectedSwitch];
+                for (var i = 0; i < specs.length; i++) {
+                    var value = $scope[specs[i].model];
+                    if (typeof value !== 'number' || isNaN(value)) {
+                        return specs[i].label + ' is missing or out of range: please enter a value from ' +
+                            specs[i].min + ' to ' + specs[i].max + '.';
+                    }
+                }
+                return '';
+            };
+
             $scope.showPopup = function() {
                 var confirmed = window.confirm("This option will allow you to implement computational search models on your VFT data. You will be redirected to a Google Colab notebook for the same, where you will upload data and select which models you want to examine. Do you want to go to the Colab notebook?");
                 if (confirmed) {
@@ -141,6 +172,13 @@
                 // Set loading state to true when button is clicked
                 $scope.isLoadingResults = true;
                 var file = $scope.userFile;
+
+                if (selectedOption === 'get-switch' && $scope.paramError()) {
+                    $scope.resultsErrorMessage = $scope.paramError();
+                    $scope.resultsErrorMessageStyle = {color: 'red', fontWeight: 'bold'};
+                    $scope.isLoadingResults = false;
+                    return;
+                }
 
                 $scope.validateEntries();
 
@@ -255,13 +293,13 @@
                 else if(selectedOption === 'get-switch'){
                     payload.append('selected-switch', selectedSwitch);
                     payload.append('selected-oov', $scope.OOVchoice);
-                    payload.append('param-mode', $scope.paramMode || 'grid');
-                    if ($scope.paramMode === 'specific') {
-                        if ($scope.paramAlpha !== undefined) payload.append('param-alpha', $scope.paramAlpha);
-                        if ($scope.paramRise !== undefined) payload.append('param-rise', $scope.paramRise);
-                        if ($scope.paramFall !== undefined) payload.append('param-fall', $scope.paramFall);
-                        if ($scope.paramBeta !== undefined) payload.append('param-beta', $scope.paramBeta);
-                        if ($scope.paramPrior !== undefined) payload.append('param-prior', $scope.paramPrior);
+                    // specific values only apply to multimodal, delta and pei; 'all' always uses the grids
+                    var specific = $scope.usesSpecificParams();
+                    payload.append('param-mode', specific ? 'specific' : 'grid');
+                    if (specific) {
+                        paramSpecs[selectedSwitch].forEach(function (spec) {
+                            payload.append('param-' + spec.key, $scope[spec.model]);
+                        });
                     }
                 }
                 payload.append('time-type', $scope.timeType || 'cumulative');
@@ -297,13 +335,22 @@
                             fontWeight: 'bold'
                         };
 
-                }).catch(function (data) {
+                }).catch(function (response) {
 
                     $scope.resultsErrorMessageStyle = {
                             color: 'red',
                             fontWeight: 'bold'
                         };
                     $scope.resultsErrorMessage = "Sorry! We could not process the results due to a technical error. Please try again.";
+                    // show the server's message for invalid requests (e.g., parameter values out of range)
+                    if (response && response.status === 400 && response.data) {
+                        try {
+                            var body = JSON.parse(new TextDecoder('utf-8').decode(new Uint8Array(response.data)));
+                            if (body.error) {
+                                $scope.resultsErrorMessage = body.error;
+                            }
+                        } catch (e) {}
+                    }
                     $scope.inProgress = false;
                     $scope.isLoadingResults = false;
                     
@@ -392,30 +439,36 @@
                         <div ng-show="paramMode === 'specific'" style="margin-top: 8px;">
                             <div ng-show="selectedSwitch === 'multimodal'">
                                 <label>Alpha (0–1):
-                                    <input type="number" ng-model="paramAlpha" ng-init="paramAlpha=0.5" min="0" max="1" step="0.1" style="width: 70px;">
+                                    <input type="number" ng-model="paramMmAlpha" ng-init="paramMmAlpha=0.5" min="0" max="1" step="any" style="width: 70px;">
                                 </label>
                             </div>
                             <div ng-show="selectedSwitch === 'delta'">
                                 <label>Rise threshold (0–1):
-                                    <input type="number" ng-model="paramRise" ng-init="paramRise=0.5" min="0" max="1" step="0.25" style="width: 70px;">
+                                    <input type="number" ng-model="paramRise" ng-init="paramRise=0.5" min="0" max="1" step="any" style="width: 70px;">
                                 </label>
                                 <label style="margin-left: 15px;">Fall threshold (0–1):
-                                    <input type="number" ng-model="paramFall" ng-init="paramFall=0.5" min="0" max="1" step="0.25" style="width: 70px;">
+                                    <input type="number" ng-model="paramFall" ng-init="paramFall=0.5" min="0" max="1" step="any" style="width: 70px;">
                                 </label>
                             </div>
                             <div ng-show="selectedSwitch === 'pei'">
                                 <label>Alpha (0–1):
-                                    <input type="number" ng-model="paramAlpha" ng-init="paramAlpha=0.8" min="0" max="1" step="0.1" style="width: 70px;">
+                                    <input type="number" ng-model="paramPeiAlpha" ng-init="paramPeiAlpha=0.8" min="0" max="1" step="any" style="width: 70px;">
                                 </label>
                                 <label style="margin-left: 15px;">Beta (0–1):
-                                    <input type="number" ng-model="paramBeta" ng-init="paramBeta=0.5" min="0" max="1" step="0.1" style="width: 70px;">
+                                    <input type="number" ng-model="paramBeta" ng-init="paramBeta=0.5" min="0" max="1" step="any" style="width: 70px;">
                                 </label>
                                 <label style="margin-left: 15px;">Prior (0.1–0.9):
-                                    <input type="number" ng-model="paramPrior" ng-init="paramPrior=0.5" min="0.1" max="0.9" step="0.1" style="width: 70px;">
+                                    <input type="number" ng-model="paramPrior" ng-init="paramPrior=0.5" min="0.1" max="0.9" step="any" style="width: 70px;">
                                 </label>
                             </div>
+                            <p ng-show="paramError()" style="color: red; font-weight: bold;">{{ paramError() }}</p>
                         </div>
                     </div>
+
+                    <p ng-show="selectedSwitch === 'all'" style="margin-top: 10px;">
+                        <b>Note:</b> with <i>all</i>, the parametric methods (Multimodal Similarity-drop, Delta Similarity and PEI) are run over their full parameter grids.
+                        To use specific parameter values, select a single method.
+                    </p>
                 </div>
                 
             
@@ -459,7 +512,7 @@
             <p ng-show="showResultsButton">
                 <br> If you would like to proceed with the corrected data, please click the button below.
                 Otherwise, please upload a new file and re-run the evaluation by clicking on 'Check Data' again. <br><br>
-                <button ng-click="retrieveResultsButton(selectedOption, selectedSwitch)" class="get-results">Get Results</button>
+                <button ng-click="retrieveResultsButton(selectedOption, selectedSwitch)" ng-disabled="selectedOption === 'get-switch' && paramError()" class="get-results">Get Results</button>
                 <div ng-show="isLoadingResults" class="loading-container active"></div>
                 <div ng-show="showResultsButton">
                 <span style="color:blue">

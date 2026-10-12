@@ -63,27 +63,34 @@ Timing data can be provided as cumulative times or inter-response times (IRT), i
 | Norm-based categorical | None | No |
 | Delta Similarity | rise threshold (0-1), fall threshold (0-1) | No |
 | Slope Difference | None | Yes |
-| Probabilistic Evidence Integration (PEI) | alpha (0-1), beta (0-1), prior (0.1-0.9) | Yes |
+| Probabilistic Evidence Integration (PEI) | alpha (0-1), beta (0-1), prior (0.1-0.9; prior probability of clustering) | Yes |
 
-For methods with parameters (multimodal, delta, PEI), you can either set specific parameter values or run a grid search over a range of values.
+For methods with parameters (multimodal, delta, PEI), you can either set specific parameter values or run a grid search over a range of values. Specific values can have any number of decimals but must be within the ranges above; if a value is missing or out of range, the page shows a message and does not submit, and the server rejects the request (HTTP 400) instead of using a default. When `all` methods are selected, the parametric methods always run over their full grids.
 
 ## Output
 
-Results are returned as a zip file containing:
-- `switch_results_<method>.csv` — one CSV per switch method family with switch designations
+Results are returned as a zip file (`<input file name>_forager.zip`) containing:
+- `switch_results.csv` — item-level switch designations (`Switch_Value`: 1 = switch, 0 = cluster, 2 = boundary case) for every selected method and parameter combination (`Switch_Method`). `PEI_Cluster_Probability` contains the PEI posterior probability of clustering, P(cluster), for PEI rows: an item is a switch when P(cluster) < 0.5, and P(switch) = 1 − P(cluster). It is empty (NaN) for the first item of each list, PEI boundary cases and rows of other methods
 - `lexical_results.csv` — semantic similarity, phonological similarity, and frequency values. When timing data is provided, also includes cumulative response time (`Cumulative_IRT`), inter-response time (`IRT`), and slope difference (`Slope_Difference`)
-- `individual_descriptive_stats.csv` — individual-level statistics
+- `individual_descriptive_stats.csv` — individual-level statistics, including the number of switches and the mean/SD of cluster size per switch method (a switch item starts a new cluster)
 - `aggregate_descriptive_stats.csv` — group-level statistics
 - `evaluation_results.csv` — details on OOV word handling (replacements, exclusions, truncations)
 - `processed_data.csv` — the processed dataset used in the pipeline
 - `forager_vocab.csv` — the full vocabulary used by forager
+
+The CSV files do not include a row-index column, matching the output of the forager command-line package.
+
+The Get Lexical Values option returns the same files without `switch_results.csv` and `aggregate_descriptive_stats.csv`.
+
+## Lexical data
+
+The files in `data/lexical_data/` (vocabulary, embeddings, semantic and phonological similarity matrices, frequencies) and `data/norms/animals_snafu_scheme_vocab.csv` are copies of the forager package's `animals` data (`data/lexical_data/animals/` and `data/norms/` in [forager](https://github.com/thelexiconlab/forager)), so the web interface and the command-line package give the same results. Word frequencies are Zipf frequencies from the `wordfreq` package (`forager/frequency.py`; `wordfreq` is only needed to regenerate them). The vocabulary includes an `UNK` entry used by the "Assign mean vector to OOV" option. When the forager data changes, copy the files again.
 
 ## Changes from forager package
 
 - `run_foraging.py` is replaced by `run_foraging_web.py`
 - `prepareData()` in `utils.py` is replaced by `evaluate_web_data()` for non-interactive data handling
 - `cues.py` adds `get_oov_sims()` for on-the-fly OOV embedding generation
-- `frequency.py` uses Google Books Ngram API instead of the `wordfreq` package
 - Parametric switch methods support specific values or grid search
 
 ## Running Tests

@@ -111,7 +111,16 @@ def upload_file():
         for key in ('alpha', 'rise', 'fall', 'beta', 'prior'):
             val = request.form.get('param-' + key)
             if val is not None:
-                param_values[key] = float(val)
+                try:
+                    param_values[key] = float(val)
+                except ValueError:
+                    return jsonify({'error': "Parameter '{}' must be a number (got '{}').".format(key, val)}), 400
+
+        if 'selected-switch' in request.form:
+            # never fall back to default values when specific values are missing or out of range
+            param_error = check_param_values(request.form['selected-switch'], param_mode, param_values)
+            if param_error is not None:
+                return jsonify({'error': param_error}), 400
 
         if 'selected-sims' in request.form:
             simval = request.form['selected-sims']
@@ -176,7 +185,7 @@ def get_results(file, switch, oov_choice, time_type='cumulative', time_units='s'
         # Write each result as a csv file
         for name, result in results.items(): 
             filename = name + ".csv"
-            zf.writestr(filename, result.to_csv())
+            zf.writestr(filename, result.to_csv(index=False))
     zip_stream.seek(0)
 
     return send_file(
