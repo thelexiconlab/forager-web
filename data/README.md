@@ -17,10 +17,13 @@ You are welcome to place your own fluency data in this folder, as long as they f
 The lexical data folder contains multiple forms of lexical data. 
 
 These include the following:
-- frequencies.csv : This contains frequency data for our large set of animals. These are derived from Google Books ngrams dataset.
-- phonmatrix.csv : This contains an N by N sized matrix containing the phonological similarity between items in the set of animals we have in our data. 
-- semantic_embeddings.csv: This contains a set of the original word2vec embeddings for the animals items, by which the similarity matrix is calculated.
-- similaritymatrix.csv:  This contains an N by N sized matrix containing semantic similarity between items in the set of animals we have in our data. 
+- vocab.csv : The vocabulary (animals), including an `UNK` entry used for out-of-vocabulary items when the mean-vector option is selected.
+- USE_frequencies.csv : Word frequencies (Zipf frequencies from the `wordfreq` package) for each vocabulary item.
+- USE_embeddings.csv : Universal Sentence Encoder embeddings for each vocabulary item, from which the semantic similarity matrix is calculated.
+- USE_semantic_matrix.csv : An N by N matrix of semantic (cosine) similarity between vocabulary items.
+- USE_phonological_matrix.csv : An N by N matrix of phonological similarity between vocabulary items.
+
+These files are copies of the forager package's `data/lexical_data/animals/` folder.
 
 You can provide your own lexical data too, which we provide functions for. However, it should follow similar format to the outline data. 
 
