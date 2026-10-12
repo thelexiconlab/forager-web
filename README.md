@@ -63,20 +63,24 @@ Timing data can be provided as cumulative times or inter-response times (IRT), i
 | Norm-based categorical | None | No |
 | Delta Similarity | rise threshold (0-1), fall threshold (0-1) | No |
 | Slope Difference | None | Yes |
-| Probabilistic Evidence Integration (PEI) | alpha (0-1), beta (0-1), prior (0.1-0.9) | Yes |
+| Probabilistic Evidence Integration (PEI) | alpha (0-1), beta (0-1), prior (0.1-0.9; prior probability of clustering) | Yes |
 
-For methods with parameters (multimodal, delta, PEI), you can either set specific parameter values or run a grid search over a range of values.
+For methods with parameters (multimodal, delta, PEI), you can either set specific parameter values or run a grid search over a range of values. Specific values can have any number of decimals but must be within the ranges above; if a value is missing or out of range, the page shows a message and does not submit, and the server rejects the request (HTTP 400) instead of using a default. When `all` methods are selected, the parametric methods always run over their full grids.
 
 ## Output
 
-Results are returned as a zip file containing:
-- `switch_results_<method>.csv` — one CSV per switch method family with switch designations
+Results are returned as a zip file (`<input file name>_forager.zip`) containing:
+- `switch_results.csv` — item-level switch designations (`Switch_Value`: 1 = switch, 0 = cluster, 2 = boundary case) for every selected method and parameter combination (`Switch_Method`). `PEI_Cluster_Probability` contains the PEI posterior probability of clustering, P(cluster), for PEI rows: an item is a switch when P(cluster) < 0.5, and P(switch) = 1 − P(cluster). It is empty (NaN) for the first item of each list, PEI boundary cases and rows of other methods
 - `lexical_results.csv` — semantic similarity, phonological similarity, and frequency values. When timing data is provided, also includes cumulative response time (`Cumulative_IRT`), inter-response time (`IRT`), and slope difference (`Slope_Difference`)
-- `individual_descriptive_stats.csv` — individual-level statistics
+- `individual_descriptive_stats.csv` — individual-level statistics, including the number of switches and the mean/SD of cluster size per switch method (a switch item starts a new cluster)
 - `aggregate_descriptive_stats.csv` — group-level statistics
 - `evaluation_results.csv` — details on OOV word handling (replacements, exclusions, truncations)
 - `processed_data.csv` — the processed dataset used in the pipeline
 - `forager_vocab.csv` — the full vocabulary used by forager
+
+The CSV files do not include a row-index column, matching the output of the forager command-line package.
+
+The Get Lexical Values option returns the same files without `switch_results.csv` and `aggregate_descriptive_stats.csv`.
 
 ## Changes from forager package
 

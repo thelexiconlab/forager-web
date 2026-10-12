@@ -7,7 +7,7 @@
 # - Added run_switch() and run_model_nll() containing partitioned functionality of run_model()
 # - Partitioned synthesize_results() into synthesize_all() with individual synthesize methods for switch, model, and nll
 
-from forager.switch import switch_delta, switch_multimodal, switch_simdrop, switch_norms_associative, switch_norms_categorical, switch_slope_difference, switch_pei
+from forager.switch import switch_delta, switch_multimodal, switch_simdrop, switch_norms_associative, switch_norms_categorical, switch_slope_difference, switch_pei, cluster_lengths
 from forager.cues import create_history_variables, get_oov_sims
 from forager.utils import evaluate_web_data
 import pandas as pd
@@ -30,6 +30,9 @@ phonpath = 'data/lexical_data/USE_phonological_matrix.csv'
 
 # Global Variables
 switch_methods = ['simdrop','multimodal','norms_associative', 'norms_categorical', 'delta', 'slope_difference', 'pei', 'all']
+
+# Parameters required by each parametric switch method when param_mode == 'specific'
+specific_params = {'multimodal': ['alpha'], 'delta': ['rise', 'fall'], 'pei': ['alpha', 'beta', 'prior']}
 
 # Methods
 
@@ -93,14 +96,18 @@ def get_lexical_data():
     labels = pd.read_csv(frequencypath, header=None)[0].values.tolist()
     return norms, similarity_matrix, phon_matrix, frequency_list, labels
 
-def calculate_switch(switch, fluency_list, semantic_similarity, phon_similarity, norms, times=None, alpha=np.arange(0, 1.1, 0.1), rise=np.arange(0, 1.25, 0.25), fall=np.arange(0, 1.25, 0.25), pei_beta=np.arange(0, 1.1, 0.1), pei_prior=np.arange(0.1, 1.0, 0.1)):
+def calculate_switch(switch, fluency_list, semantic_similarity, phon_similarity, norms, times=None, alpha=np.arange(0, 1.1, 0.1), rise=np.arange(0, 1.25, 0.25), fall=np.arange(0, 1.25, 0.25), pei_beta=np.arange(0, 1.1, 0.1), pei_prior=np.arange(0.1, 1.0, 0.1), return_probabilities=False):
     '''
     1. Check if specified switch model is valid
     2. Return set of switches, including parameter value, if required
     switch_methods = ['simdrop','multimodal','norms_associative', 'norms_categorical', 'delta', 'slope_difference', 'pei', 'all']
+
+    return_probabilities: if True, also return a list aligned with switch_vecs holding the PEI
+        posterior P(cluster) array for PEI vectors and None for other methods.
     '''
     switch_names = []
     switch_vecs = []
+    switch_probs = []
 
     if switch not in switch_methods:
         ex_str = "Specified switch method is invalid. Switch method must be one of the following: {switch}".format(
@@ -154,8 +161,14 @@ def calculate_switch(switch, fluency_list, semantic_similarity, phon_similarity,
                 for j, b in enumerate(pei_beta):
                     for k, p in enumerate(pei_prior):
                         switch_names.append("pei_alpha={alpha}_beta={beta}_prior={prior}".format(alpha=a, beta=b, prior=p))
-                        switch_vecs.append(switch_pei(fluency_list, times, semantic_similarity, phon_similarity, slope_diffs=precomputed_slope_diffs, alpha=a, beta=b, prior_probability=p))
+                        decisions, probs = switch_pei(fluency_list, times, semantic_similarity, phon_similarity, slope_diffs=precomputed_slope_diffs, alpha=a, beta=b, prior_probability=p, return_probabilities=True)
+                        switch_vecs.append(decisions)
+                        switch_probs.append(probs)
 
+    if return_probabilities:
+        # PEI vectors are appended last; all other methods have no probabilities
+        switch_probs = [None] * (len(switch_vecs) - len(switch_probs)) + switch_probs
+        return switch_names, switch_vecs, precomputed_slope_diffs, switch_probs
     return switch_names, switch_vecs, precomputed_slope_diffs
 
 
@@ -218,27 +231,60 @@ def run_sims(data):
     lexical_results = pd.concat(lexical_results,ignore_index=True)
     return lexical_results
 
+def check_param_values(switch, param_mode, param_values):
+    """
+    Returns an error message if the parameter values needed by the selected switch method in
+    'specific' mode are missing or out of range, or None if they are valid.
+    alpha, beta, rise and fall must be in [0, 1]; prior must be in (0, 1).
+    Grid mode and methods without parameters (including 'all', which always uses the grids) need no values.
+    """
+    if param_mode not in ('grid', 'specific'):
+        return "Invalid parameter mode '{}': use 'grid' or 'specific'.".format(param_mode)
+    if param_mode == 'grid' or switch not in specific_params:
+        return None
+    param_values = param_values or {}
+    for key in specific_params[switch]:
+        value = param_values.get(key)
+        if value is None:
+            return "Missing value for parameter '{}', which the {} method needs when specific values are selected.".format(key, switch)
+        if key == 'prior':
+            if not 0 < value < 1:
+                return "Parameter 'prior' must be greater than 0 and less than 1 (got {}).".format(value)
+        elif not 0 <= value <= 1:
+            return "Parameter '{}' must be between 0 and 1 (got {}).".format(key, value)
+    return None
+
 def run_switch(data, switch, param_mode='grid', param_values=None):
     """
     Perform only switch computations.
     Outputs a dataframe for switch results.
+    In 'specific' mode, the values needed by the selected method must be present in param_values
+    (see check_param_values); otherwise a ValueError is raised.
     """
+
+    error = check_param_values(switch, param_mode, param_values)
+    if error is not None:
+        raise ValueError(error)
 
     norms, similarity_matrix, phon_matrix, frequency_list, labels = get_lexical_data()
 
-    # Build parameter arrays based on mode
-    if param_mode == 'specific' and param_values and switch != 'all':
-        alpha = np.array([param_values.get('alpha', 0.5)])
-        rise = np.array([param_values.get('rise', 0.5)])
-        fall = np.array([param_values.get('fall', 0.5)])
-        pei_beta = np.array([param_values.get('beta', 0.5)])
-        pei_prior = np.array([param_values.get('prior', 0.5)])
-    else:
-        alpha = np.arange(0, 1.1, 0.1)
-        rise = np.arange(0, 1.25, 0.25)
-        fall = np.arange(0, 1.25, 0.25)
-        pei_beta = np.arange(0, 1.1, 0.1)
-        pei_prior = np.arange(0.1, 1.0, 0.1)
+    # Default grids (rounded to remove floating point noise, e.g. 0.30000000000000004)
+    alpha = np.round(np.arange(0, 1.1, 0.1), 10)
+    rise = np.round(np.arange(0, 1.25, 0.25), 10)
+    fall = np.round(np.arange(0, 1.25, 0.25), 10)
+    pei_beta = np.round(np.arange(0, 1.1, 0.1), 10)
+    pei_prior = np.round(np.arange(0.1, 1.0, 0.1), 10)
+
+    # Specific values replace the grids of the parameters used by the selected method
+    if param_mode == 'specific' and switch in specific_params:
+        if 'alpha' in specific_params[switch]:
+            alpha = np.array([param_values['alpha']])
+        if switch == 'delta':
+            rise = np.array([param_values['rise']])
+            fall = np.array([param_values['fall']])
+        if switch == 'pei':
+            pei_beta = np.array([param_values['beta']])
+            pei_prior = np.array([param_values['prior']])
 
     switch_results = pd.DataFrame()
     lexical_results = pd.DataFrame()
@@ -271,8 +317,9 @@ def run_switch(data, switch, param_mode='grid', param_values=None):
             lexical_df['IRT'] = irt
 
         # history_vars contains sim_list, sim_history, freq_list, freq_history,phon_list, phon_history
-        switch_names, switch_vecs, slope_diffs = calculate_switch(switch, fl_list, history_vars[0], history_vars[4], norms, times=times,
-                                                     alpha=alpha, rise=rise, fall=fall, pei_beta=pei_beta, pei_prior=pei_prior)
+        switch_names, switch_vecs, slope_diffs, switch_probs = calculate_switch(switch, fl_list, history_vars[0], history_vars[4], norms, times=times,
+                                                     alpha=alpha, rise=rise, fall=fall, pei_beta=pei_beta, pei_prior=pei_prior,
+                                                     return_probabilities=True)
 
         # Add slope differences to lexical results (from precomputed values)
         if times is not None:
@@ -295,6 +342,8 @@ def run_switch(data, switch, param_mode='grid', param_values=None):
             df['Fluency_Item'] = fl_list
             df['Switch_Value'] = switch_val
             df['Switch_Method'] = switch_names[j]
+            # posterior P(cluster) for PEI rows, NaN for other methods
+            df['PEI_Cluster_Probability'] = switch_probs[j] if switch_probs[j] is not None else np.nan
             switch_df = pd.concat([switch_df, df], ignore_index=True)
 
         switch_results = pd.concat([switch_results, switch_df], ignore_index=True)
@@ -397,19 +446,11 @@ def indiv_desc_stats(lexical_results, switch_results = None):
         cluster_size_sd = []
         for sub, fl_list in switch_results.groupby(["Subject", "Switch_Method"]):
             switch_method = sub[1]
-            cluster_lengths = []
-            num_switches = 0
-            ct = 0
-            for x in fl_list['Switch_Value'].values:
-                ct += 1
-                if x == 1:
-                    num_switches += 1
-                    cluster_lengths.append(ct)
-                    ct = 0
-            if ct != 0:
-                cluster_lengths.append(ct)
-            avg = sum(cluster_lengths) / len(cluster_lengths)
-            sd = np.std(cluster_lengths)
+            switch_values = fl_list['Switch_Value'].values
+            lengths = cluster_lengths(switch_values)
+            num_switches = int((switch_values == 1).sum())
+            avg = sum(lengths) / len(lengths)
+            sd = np.std(lengths)
             switch_methods.append(switch_method)
             num_switches_arr.append(num_switches)
             cluster_size_mean.append(avg)
