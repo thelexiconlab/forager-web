@@ -28,7 +28,7 @@ Currently this includes:
 - Phonological Matrix Functions (phonology_funcs)
 
 ### frequency.py
-This contains functions pertaining to pinging the API for Google Books ngrams, and getting frequency values.
+This contains functions for getting word frequency values (Zipf frequencies) with the `wordfreq` package.
 
 ### utils.py
 This contains all helper functions needed in our work. It currently contains the prepareData function which helps with making fluency data amenable to our package/analysis pipeline. 

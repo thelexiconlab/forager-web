@@ -11,6 +11,8 @@ aedes aegypti
 affenpinscher
 afghan hound
 african dog
+african elephant
+african wild dog
 agama
 agouti
 airedale terrier
@@ -25,6 +27,7 @@ alligator snapping turtle
 allosaurus
 alpaca
 amberjack
+american toad
 amoeba
 amphibian
 amphioxus
@@ -66,6 +69,7 @@ arrowhead dogfish
 arrowhead shark
 arthropod
 ascidians
+asian elephant
 asp
 ass
 assassin bug
@@ -76,6 +80,7 @@ australopithecine
 avian
 avocet
 axolotl
+aye aye
 babirusa
 baboon
 baby
@@ -441,6 +446,7 @@ corn earworm
 corn snake
 corncrake
 cornish game hen
+corydoras
 cotton bollworm
 cottonmouth
 cottonmouth moccasin
@@ -506,6 +512,7 @@ deerhound
 degu
 desert tortoise
 devil
+devon rex
 diamondback
 diamondback rattlesnake
 diamondback terrapin
@@ -568,6 +575,7 @@ eastern indigo snake
 eastern kingbird
 eastern lowland gorilla
 eastern meadowlark
+eastern newt
 eastern toebiter
 echidna
 echinoderm
@@ -594,6 +602,7 @@ eugarie
 evening grosbeak
 ewe
 fairy shrimp
+fairy tern
 falcon
 fall armyworm
 fall webworm
@@ -696,9 +705,9 @@ giant schnauzer
 giant squid
 giant tortoise
 gibbon
+gila monster
 giraffe
 glaucus
-glia monster
 glider
 globefish
 glowworm
@@ -741,6 +750,7 @@ gray fox
 gray jay
 gray mullet
 gray partridge
+gray treefrog
 gray whale
 gray wolf
 graywolf
@@ -755,6 +765,8 @@ greater yellowlegs
 grebe
 green lacewing
 green mamba
+green tree frog
+green tree python
 greenfly
 greenling
 greenshank
@@ -808,6 +820,7 @@ halibut
 hammerhead
 hammerhead shark
 hamster
+hanover hound
 harambe
 harbor porpoise
 harbor seal
@@ -817,6 +830,7 @@ harpy eagle
 harrier
 hart
 hartebeest
+havanese dog
 hawk
 hawk moth
 hawk owl
@@ -1048,6 +1062,8 @@ locust
 loggerhead
 loggerhead shrike
 loggerhead turtle
+long tailed lizard
+long tailed salamander
 longhorn
 longneck
 loon
@@ -1072,6 +1088,7 @@ maggot
 magpie
 mahi
 mahimahi
+maine coon
 mako shark
 malamute
 malarial mosquito
@@ -1165,6 +1182,7 @@ monkfish
 monotreme
 monster
 moonfish
+moonglow boa
 moorhen
 moose
 moray
@@ -1217,6 +1235,7 @@ nightingale
 nightjar
 nilgai
 northern bobwhite
+northern cricket frog
 northern harrier
 northern parula
 northern pike
@@ -1270,6 +1289,7 @@ packhorse
 packrat
 paddlefish
 pajero
+pallass cat
 palm civet
 palo verde borer
 palomino
@@ -1294,6 +1314,7 @@ pectoral sandpiper
 pelican
 pembroke welsh corgi
 penguin
+penis worm
 perch
 peregrine
 peregrine falcon
@@ -1349,6 +1370,7 @@ plaice
 planaria
 plankton
 platypus
+pleco
 plesiosaur
 plover
 pochard
@@ -1428,6 +1450,7 @@ quail
 queen bee
 queenfish
 quetzal
+quokka
 rabbit
 raccoon
 raccoon fox
@@ -1454,6 +1477,7 @@ razorback
 razorbill
 red admiral butterfly
 red bellied woodpecker
+red deer
 red drum
 red fox
 red kangaroo
@@ -1547,6 +1571,7 @@ sand dab
 sand dollar
 sand lance
 sand shark
+sand tiger shark
 sandbar shark
 sandfish
 sandfly
@@ -1557,6 +1582,7 @@ sardine
 sauropod
 sauropod dinosaur
 saury
+savannah cat
 sawfish
 sawfly
 scallop
@@ -1635,6 +1661,7 @@ shrimp
 siamang
 siamese cat
 siberian blue robin
+siberian cat
 siberian husky
 siberian tiger
 sidewinder
@@ -1678,6 +1705,7 @@ snipe
 snoek
 snook
 snow crab
+snow goose
 snow leopard
 snow lion
 snow monkey
@@ -1703,6 +1731,7 @@ speckled trout
 spectacled caiman
 sperm whale
 sphinx moth
+sphynx cat
 spider
 spider crab
 spider mite
@@ -1770,6 +1799,7 @@ striped skunk
 striper
 sturgeon
 suckerfish
+suckermouth catfish
 sugar glider
 summer tanager
 sun bear
@@ -1824,6 +1854,7 @@ theropod dinosaur
 thorny devil
 thoroughbred
 threadfin
+three toed sloth
 thresher shark
 thrip
 thrush
@@ -2043,4 +2074,11 @@ zebrafish
 zebu
 zooplankton
 zorillo
+painted dog
+lightning bug
+flying fox
+tigerfish
+sifaka
+mockingjay
+sphynx
 UNK

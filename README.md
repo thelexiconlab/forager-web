@@ -82,12 +82,15 @@ The CSV files do not include a row-index column, matching the output of the fora
 
 The Get Lexical Values option returns the same files without `switch_results.csv` and `aggregate_descriptive_stats.csv`.
 
+## Lexical data
+
+The files in `data/lexical_data/` (vocabulary, embeddings, semantic and phonological similarity matrices, frequencies) and `data/norms/animals_snafu_scheme_vocab.csv` are copies of the forager package's `animals` data (`data/lexical_data/animals/` and `data/norms/` in [forager](https://github.com/thelexiconlab/forager)), so the web interface and the command-line package give the same results. Word frequencies are Zipf frequencies from the `wordfreq` package (`forager/frequency.py`; `wordfreq` is only needed to regenerate them). The vocabulary includes an `UNK` entry used by the "Assign mean vector to OOV" option. When the forager data changes, copy the files again.
+
 ## Changes from forager package
 
 - `run_foraging.py` is replaced by `run_foraging_web.py`
 - `prepareData()` in `utils.py` is replaced by `evaluate_web_data()` for non-interactive data handling
 - `cues.py` adds `get_oov_sims()` for on-the-fly OOV embedding generation
-- `frequency.py` uses Google Books Ngram API instead of the `wordfreq` package
 - Parametric switch methods support specific values or grid search
 
 ## Running Tests
