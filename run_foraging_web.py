@@ -58,11 +58,11 @@ def get_evaluation_message(file, oov_choice='exclude', time_type='cumulative', t
         # inform user about detected columns
         detected_cols = list(data_df.columns)
         if 'timepoint' in detected_cols and 'time' in detected_cols:
-            message += "We detected columns: SID, entry, timepoint, and time (timing data). \n "
+            message += "We detected columns: SID, entry, timepoint, and time (timing data).\n"
         elif 'time' in detected_cols:
-            message += "We detected columns: SID, entry, and time (timing data). \n "
+            message += "We detected columns: SID, entry, and time (timing data).\n"
         elif 'timepoint' in detected_cols:
-            message += "We detected columns: SID, entry, and timepoint. \n "
+            message += "We detected columns: SID, entry, and timepoint.\n"
         
         if (replacement_count + trunc_count + exclude_count + unk_count == 0):
             message += "Congrats! We have found all items from your data in our vocabulary."
